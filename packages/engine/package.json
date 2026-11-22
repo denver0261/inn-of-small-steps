@@ -1,0 +1,11 @@
+{
+  "name": "@inn/engine",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@inn/schema": "workspace:*"
+  }
+}

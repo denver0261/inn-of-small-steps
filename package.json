@@ -1,0 +1,26 @@
+{
+  "name": "inn-of-small-steps",
+  "private": true,
+  "type": "module",
+  "packageManager": "pnpm@10.34.9",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "lint": "eslint .",
+    "test": "vitest run",
+    "sim": "pnpm --filter @inn/sim start",
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm sim"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "eslint": "^10.14.0",
+    "fast-check": "^4.10.2",
+    "tsx": "^4.23.15",
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.1.0"
+  }
+}

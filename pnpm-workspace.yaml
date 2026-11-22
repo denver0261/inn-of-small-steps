@@ -1,0 +1,9 @@
+packages:
+  - "packages/*"
+  - "apps/*"
+
+# Supply-chain guard: never install a version published less than 14 days ago.
+minimumReleaseAge: 20160
+
+onlyBuiltDependencies:
+  - esbuild
