@@ -1,0 +1,16 @@
+node_modules/
+.pnpm-store/
+dist/
+build/
+coverage/
+.expo/
+.expo-shared/
+ios/
+android/
+*.log
+.env
+.env.*
+!.env.example
+.DS_Store
+supabase/.temp/
+supabase/.branches/
