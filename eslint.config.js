@@ -27,7 +27,7 @@ const engineIsPure = {
 };
 
 export default tseslint.config(
-  { ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**"] },
+  { ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**", "packages/schema/src/database.ts"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   engineIsPure,

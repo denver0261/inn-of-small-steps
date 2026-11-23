@@ -3,6 +3,7 @@
 ## M1 – Habit core (in progress)
 
 - Pure habit rules: chore due dates and list order, chore check-off as a Home log, the 14-day consistency rate (shared with the XP multiplier), weekly pace, goal changes, habit slots, and Apple Health workout import with de-duplication and late syncs. See [decisions/0003](decisions/0003-m1-habit-rules.md).
+- Supabase schema with row-level security: a shared house joined by invite, private workouts and pauses, logs locked once their day closes, rides and lifting only from Apple Health. 29 pgTAP access tests run in CI, and generated database types live in `@inn/schema`. See [decisions/0004](decisions/0004-m1-database.md).
 
 ## M0 – Simulator (2026-11-22)
 

@@ -11,13 +11,18 @@
     "lint": "eslint .",
     "test": "vitest run",
     "sim": "pnpm --filter @inn/sim start",
-    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm sim"
+    "check": "pnpm typecheck && pnpm lint && pnpm test && pnpm sim",
+    "db:start": "supabase db start",
+    "db:reset": "supabase db reset --local",
+    "db:test": "supabase test db",
+    "db:types": "supabase gen types typescript --local --schema public > packages/schema/src/database.ts"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
     "@types/node": "^26.6.6",
     "eslint": "^10.14.0",
     "fast-check": "^4.10.2",
+    "supabase": "3.0.0",
     "tsx": "^4.23.15",
     "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
