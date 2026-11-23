@@ -1,5 +1,9 @@
 # Changelog
 
+## M1 – Habit core (in progress)
+
+- Pure habit rules: chore due dates and list order, chore check-off as a Home log, the 14-day consistency rate (shared with the XP multiplier), weekly pace, goal changes, habit slots, and Apple Health workout import with de-duplication and late syncs. See [decisions/0003](decisions/0003-m1-habit-rules.md).
+
 ## M0 – Simulator (2026-11-22)
 
 - pnpm workspace with `@inn/schema`, `@inn/content`, `@inn/engine` and `@inn/sim`, plus GitHub Actions CI.

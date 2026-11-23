@@ -36,7 +36,12 @@ export const DAY_ROLLOVER_HOUR = 4;
 
 /** The game day `clock` is in, for a player in `timeZone` (an IANA name). */
 export function gameDate(clock: Clock, timeZone: string): LocalDate {
-  const shifted = new Date(clock.now().getTime() - DAY_ROLLOVER_HOUR * 3_600_000);
+  return gameDateAt(clock.now(), timeZone);
+}
+
+/** The game day an instant falls on, for a player in `timeZone`. */
+export function gameDateAt(instant: Date, timeZone: string): LocalDate {
+  const shifted = new Date(instant.getTime() - DAY_ROLLOVER_HOUR * 3_600_000);
   // en-CA formats as YYYY-MM-DD.
   return new Intl.DateTimeFormat("en-CA", { timeZone, year: "numeric", month: "2-digit", day: "2-digit" }).format(shifted);
 }
