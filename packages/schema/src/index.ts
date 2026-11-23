@@ -61,6 +61,10 @@ export const HabitLog = z.object({
   tier: Tier.optional(),
   source: z.enum(["tap", "apple_health"]),
   healthWorkoutId: z.string().optional(),
+  /** Set when the log came from checking off a chore. */
+  choreId: z.string().optional(),
+  /** The real day it happened, when that differs from `date` (a workout that synced after its day closed). */
+  performedOn: LocalDate.optional(),
 });
 export type HabitLog = z.infer<typeof HabitLog>;
 
@@ -79,3 +83,42 @@ export const ClassPath = z.object({
   blurb: z.string().min(1),
 });
 export type ClassPath = z.infer<typeof ClassPath>;
+
+/** When a chore comes back: N days after it was last done, or on set weekdays. */
+export const RepeatRule = z.discriminatedUnion("kind", [
+  z.object({ kind: z.literal("every"), days: z.number().int().min(1) }),
+  z.object({ kind: z.literal("weekly"), days: z.array(Weekday).min(1) }),
+]);
+export type RepeatRule = z.infer<typeof RepeatRule>;
+
+/** One item on the shared house chore list. Checking it off writes a Home HabitLog. */
+export const Chore = z.object({
+  id: z.string().min(1),
+  title: z.string().min(1),
+  roomId: z.string().min(1),
+  /** Sets the tier of the log it writes. */
+  size: Tier,
+  /** Omitted = a one-off chore, gone once done. */
+  repeat: RepeatRule.optional(),
+  /** A player id. Omitted = either player. */
+  assignee: z.string().min(1).optional(),
+  createdOn: LocalDate,
+  lastDoneOn: LocalDate.optional(),
+  lastDoneBy: z.string().min(1).optional(),
+});
+export type Chore = z.infer<typeof Chore>;
+
+/**
+ * A workout as read from Apple Health. Only these fields exist: no heart rate, no samples.
+ * `fromGarmin` is used on the phone to pick between duplicate records of one session.
+ */
+export const HealthWorkout = z.object({
+  id: z.string().min(1),
+  type: z.enum(["cycling", "strength"]),
+  start: z.iso.datetime({ offset: true }),
+  end: z.iso.datetime({ offset: true }),
+  durationMin: z.number().nonnegative(),
+  distanceKm: z.number().nonnegative().optional(),
+  fromGarmin: z.boolean(),
+});
+export type HealthWorkout = z.infer<typeof HealthWorkout>;

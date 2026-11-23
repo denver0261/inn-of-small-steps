@@ -2,6 +2,7 @@ import type { Domain, Goal, Habit, HabitLog, LocalDate, Pause } from "@inn/schem
 import { addDays, dateRange, daysBetween, weekStart, weekday } from "./dates.ts";
 import { activeGoal, effectiveWeeklyTarget, isPaused, isScheduledDay } from "./goals.ts";
 import { addXp, NEW_PLAYER, type Progress } from "./levels.ts";
+import { consistencyRate, type SessionsOn } from "./progress.ts";
 import type { Tuning } from "./tuning.ts";
 
 /** Sessions per habit on one closed day. The engine's only memory of past logs. */
@@ -161,35 +162,16 @@ function closeOne(state: PlayerState, input: NightInput, tuning: Tuning): NightR
   return { state: next, events };
 }
 
-/**
- * 1.0 to 1.5 from the habit's completion rate over the last `windowDays` days (today
- * included), judged each day against the goal active that day. Paused days and days
- * before the habit had a goal are left out, not counted as misses.
- */
+/** 1.0 to 1.5 from the habit's 14-day consistency rate (see `consistencyRate`); no history counts as 0. */
 export function consistencyMultiplier(
   habitId: string,
   date: LocalDate,
   input: Pick<NightInput, "goals" | "pauses">,
-  sessionsOn: (d: LocalDate, habitId: string) => number,
+  sessionsOn: SessionsOn,
   tuning: Tuning,
 ): number {
   const { windowDays, min, max } = tuning.consistency;
-  let credit = 0;
-  let expected = 0;
-  for (const d of dateRange(addDays(date, -(windowDays - 1)), date)) {
-    const goal = activeGoal(input.goals, habitId, d);
-    if (goal === undefined || isPaused(input.pauses, habitId, d)) continue;
-    const n = sessionsOn(d, habitId);
-    if (goal.period === "day") {
-      if (!isScheduledDay(goal, d)) continue;
-      credit += Math.min(n, goal.target) / goal.target;
-      expected += 1;
-    } else {
-      credit += n;
-      expected += goal.target / 7;
-    }
-  }
-  const rate = expected === 0 ? 0 : Math.min(1, credit / expected);
+  const rate = consistencyRate(habitId, date, input.goals, input.pauses, sessionsOn, windowDays) ?? 0;
   return min + (max - min) * rate;
 }
 
@@ -198,7 +180,7 @@ function isOverPrescribed(
   habitId: string,
   date: LocalDate,
   priorToday: number,
-  sessionsOn: (d: LocalDate, habitId: string) => number,
+  sessionsOn: SessionsOn,
 ): boolean {
   if (goal?.prescribed !== true) return false;
   if (goal.period === "day") return priorToday >= goal.target;

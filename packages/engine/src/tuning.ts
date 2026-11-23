@@ -20,6 +20,10 @@ export interface Tuning {
   comeback: { awayDays: number; bonus: number };
   /** FLAGGED: levels that open a Skill slot ("most even levels and always at 10"). */
   skillSlotLevels: readonly number[];
+  /** Apple Health workouts at or over this many minutes are big; shorter ones are normal. */
+  workoutBigFromMin: { cycling: number; strength: number };
+  /** Active habits a player may have: `initial` at first, `later` once `afterDays` have passed. FLAGGED: `later`. */
+  habitSlots: { initial: number; afterDays: number; later: number };
 }
 
 export const DEFAULT_TUNING: Tuning = {
@@ -31,4 +35,6 @@ export const DEFAULT_TUNING: Tuning = {
   prescribedOverTargetFactor: 0.5,
   comeback: { awayDays: 3, bonus: 0.25 },
   skillSlotLevels: [2, 4, 6, 8, 10],
+  workoutBigFromMin: { cycling: 30, strength: 45 },
+  habitSlots: { initial: 5, afterDays: 14, later: 8 },
 };

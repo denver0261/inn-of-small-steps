@@ -43,7 +43,7 @@ Setup takes about 10 minutes each, and the game is playable that same evening.
 2. **Pick a path.** Short descriptions of the 9 base paths. You can switch freely during the first 7 days.
 3. **Name your rooms.** List your real rooms; each gets a matching room in the Liscor house.
 4. **Bring in the chore list.** Add chores, or import from wherever the list lives now.
-5. **Choose starting habits.** Up to 5 active habits each at first, with goals (PT marked prescribed at 3x a week). More slots open after week 2, so day one isn't overwhelming.
+5. **Choose starting habits.** Up to 5 active habits each at first, with goals (PT marked prescribed at 3x a week). More slots open after week 2 (8 in all for now), so day one isn't overwhelming.
 6. **Connect Apple Health.** Turn on Garmin Connect's Apple Health sync, then allow workouts, steps and sleep.
 7. **Invite your partner.** The second player joins the same house by invite link and does steps 2, 5 and 6.
 8. **First outing.** A guided Tier 1 errand that teaches stamina and choices.
@@ -185,7 +185,7 @@ Tidying habits repair the Liscor house room by room. In setup you name your real
 The house chore list lives in the app, shared by both players: either of you can add a chore, and checking one off logs it for whoever did it.
 
 - **Each chore has:** a name, a room, a size (tiny / normal / big, which sets XP), and an optional repeat (every N days, or weekly on set days). Optional assignee: you, your wife, or either.
-- **Repeating chores come back on their own** when due, sorted by room and how overdue they are.
+- **Repeating chores come back on their own** when due, sorted by room and how overdue they are. "Every N days" counts from when it was last done; a new chore is due the day it's added.
 - **Checking one off** counts as a Home habit log: XP to whoever checked it off, materials, and repair to that room in the Liscor house.
 - **Overdue chores show in the game house** as dust or clutter in the matching room. It's only a look and never takes anything away.
 - **Co-op quests can pull from the list,** e.g. "clear 10 chores between you this week." The app shows who did what, but never ranks you against each other.
