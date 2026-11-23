@@ -1,0 +1,13 @@
+{
+  "name": "@inn/sim",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@inn/content": "workspace:*",
+    "@inn/engine": "workspace:*",
+    "@inn/schema": "workspace:*"
+  }
+}

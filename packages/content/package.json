@@ -1,0 +1,12 @@
+{
+  "name": "@inn/content",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@inn/schema": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}

@@ -11,5 +11,10 @@ Personal fan project; not affiliated with the author of *The Wandering Inn*.
 
 ## Status
 
-Pre-build. Next step: milestone M0 (the level-curve simulator) and the repo scaffold.
-See "Kickoff for Claude Code" in the design doc for the first prompts.
+M0 (the level-curve simulator) is done. Next is M1, the habit core: the Expo app, accounts, habits and goals, and the Apple Health import.
+
+```bash
+pnpm install
+pnpm sim        # the 365-day level curve
+pnpm check      # typecheck, lint, test, sim
+```
