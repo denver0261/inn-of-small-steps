@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Inn of Small Steps",
+    "slug": "inn-of-small-steps",
+    "scheme": "innofsmallsteps",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "userInterfaceStyle": "automatic",
+    "ios": {
+      "bundleIdentifier": "dev.innofsmallsteps.app",
+      "supportsTablet": false
+    },
+    "plugins": ["expo-router"],
+    "experiments": { "typedRoutes": false }
+  }
+}

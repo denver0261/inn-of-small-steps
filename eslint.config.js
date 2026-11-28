@@ -27,7 +27,7 @@ const engineIsPure = {
 };
 
 export default tseslint.config(
-  { ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**", "packages/schema/src/database.ts"] },
+  { ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**", "packages/schema/src/database.ts", "apps/*/ios/**", "apps/*/android/**", "apps/*/.expo/**", "apps/*/expo-env.d.ts"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   engineIsPure,
