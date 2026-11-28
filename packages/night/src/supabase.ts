@@ -3,7 +3,7 @@ import type { HouseEvent, HousePlayerResult, LevelEvent, NightChoices } from "@i
 import type { Database, Goal, HabitLog, LocalDate, Pause } from "@inn/schema";
 import { goalFromRow, habitFromRow, logFromRow, pauseFromRow } from "@inn/schema/rows";
 import type { Json } from "@inn/schema";
-import type { HabitRow, NightDb, PlayerRow, StoryRecord } from "./db.ts";
+import type { HabitRow, NightDb, OrderKind, PlayerRow, StoryRecord } from "./db.ts";
 
 type Client = SupabaseClient<Database>;
 
@@ -65,6 +65,12 @@ export function supabaseNightDb(db: Client): NightDb {
       if (!r) return {};
       return { ...(r.skill ? { skill: r.skill } : {}), ...(r.evolution ? { evolution: r.evolution } : {}), ...(r.reroll_evolution ? { rerollEvolution: true } : {}), grace: r.grace };
     },
+    async logsBetween(playerId, from, to): Promise<HabitLog[]> {
+      return ok(await db.from("habit_logs").select("*").eq("player_id", playerId).gte("date", from).lte("date", to)).map((r) => {
+        const { id: _, playerId: __, ...log } = logFromRow(r);
+        return log;
+      });
+    },
     async recordNight(playerId, date, state, events) {
       ok(await db.rpc("record_night", { p: playerId, d: date, new_state: state as Json, day_events: events as unknown as Json }));
     },
@@ -105,7 +111,7 @@ export function supabaseNightDb(db: Client): NightDb {
     },
     async orders(householdId, date) {
       const rows = ok(await db.from("house_orders").select("player_id, kind, ref").eq("household_id", householdId).eq("date", date).order("created_at"));
-      return rows.map((r) => ({ playerId: r.player_id, kind: r.kind as "build" | "craft" | "meal", ref: r.ref }));
+      return rows.map((r) => ({ playerId: r.player_id, kind: r.kind as OrderKind, ref: r.ref }));
     },
     async recordStory(s: StoryRecord) {
       ok(

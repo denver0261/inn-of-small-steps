@@ -1,4 +1,4 @@
-import { classPath, EVOLUTION_QUALIFIERS, ITEMS, RECIPES, RECRUITS, SKILL_CATALOG, TIER1_EVENTS, UPGRADES, VISITORS, upgrade as upgradeDef, item as itemDef } from "@inn/content";
+import { classPath, EVOLUTION_QUALIFIERS, ITEMS, RECIPES, RECRUITS, SKILL_CATALOG, TIER1_EVENTS, UPGRADES, VISITORS, upgrade as upgradeDef, item as itemDef, visitor as visitorDef } from "@inn/content";
 import {
   addDays,
   closeDay,
@@ -13,6 +13,7 @@ import {
   NEW_PLAYER_STATE,
   outingSeed,
   planOuting,
+  type DayActivity,
   type HouseEvent,
   type HousePlayerResult,
   type PlayerState,
@@ -141,15 +142,35 @@ async function settleHouse(db: NightDb, householdId: string, members: readonly P
       builds: orders.filter((o) => o.kind === "build").map((o) => o.ref),
       crafts: orders.filter((o) => o.kind === "craft").map((o) => o.ref),
       skillThemes: [...new Set([...states.values()].flatMap((s) => s.skills.map((k) => k.theme)))],
-      // Visitor orders and quest activity are wired in with the M4 tables.
-      visitorOrders: [],
-      activity: [],
+      visitorOrders: orders.flatMap((o) => (o.kind === "accept" || o.kind === "decline" || o.kind === "serve" || o.kind === "inn" ? [{ playerId: o.playerId, kind: o.kind, ref: o.ref }] : [])),
+      activity: await questActivity(db, members, house.quests.map((q) => q.startDate), date),
       content: { upgrades: UPGRADES, recipes: RECIPES, items: ITEMS, events: TIER1_EVENTS, visitors: VISITORS, recruits: RECRUITS },
     },
     tuning,
   );
   await db.recordHouseNight(householdId, date, r.house, r.events, r.players);
   return r.players;
+}
+
+/** Everyone's logs by domain (and chores) from the earliest active quest's start through `date`. */
+async function questActivity(db: NightDb, members: readonly PlayerRow[], starts: readonly LocalDate[], date: LocalDate): Promise<DayActivity[]> {
+  if (starts.length === 0) return [];
+  const from = [...starts].sort()[0]!;
+  if (from > date) return [];
+  const out: DayActivity[] = [];
+  for (const m of members) {
+    const habits = await db.habits(m.id);
+    const byDate = new Map<LocalDate, DayActivity>();
+    for (const log of await db.logsBetween(m.id, from, date)) {
+      const a = byDate.get(log.date) ?? { date: log.date, playerId: m.id, domains: {}, chores: 0 };
+      const domain = habits.find((h) => h.id === log.habitId)?.domain;
+      if (domain) a.domains[domain] = (a.domains[domain] ?? 0) + 1;
+      if (log.choreId) a.chores += 1;
+      byDate.set(log.date, a);
+    }
+    out.push(...byDate.values());
+  }
+  return out;
 }
 
 async function processDay(db: NightDb, p: PlayerRow, date: LocalDate, tuning: Tuning, house?: HousePlayerResult): Promise<number[]> {
@@ -209,6 +230,9 @@ export function houseNews(events: readonly HouseEvent[], names: Readonly<Record<
   for (const e of events) {
     if (e.type === "built") out.push(`${upgradeDef(e.upgradeId).name} is finished overnight.`);
     if (e.type === "crafted") out.push(`${itemDef(e.itemId).name} is ready${e.fine ? ", and it came out especially well" : ""}.`);
+    if (e.type === "visitor_arrived") out.push(`${visitorDef(e.offer.templateId).name} will be at the door this morning.`);
+    if (e.type === "quest_done") out.push(`${visitorDef(e.quest.templateId).thanks}`);
+    if (e.type === "inn_evening") out.push(`${names[e.playerId] ?? "Someone"} spent the evening at the Wandering Inn.`);
     if (e.type === "outing" && e.result.rare) out.push(`${names[e.playerId] ?? "Someone"} came home from an outing with ${withArticle(itemDef(e.result.rare).name)}.`);
   }
   return out;
