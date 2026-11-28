@@ -11,7 +11,7 @@ Personal fan project; not affiliated with the author of *The Wandering Inn*.
 
 ## Status
 
-M0 (the level-curve simulator) is done. M1, the habit core, is in progress: the habit rules and the database are in; the Expo app and the Apple Health import are next.
+M0 (the level-curve simulator) is done. M1, the habit core, is in progress: the habit rules, the database and the iPhone app are in; the Apple Health import is next.
 
 ```bash
 pnpm install
@@ -26,3 +26,13 @@ pnpm db:start   # local Postgres with the migrations applied
 pnpm db:test    # pgTAP access-rule tests
 pnpm db:types   # regenerate packages/schema/src/database.ts after a migration
 ```
+
+To run the app in the iOS Simulator (needs Xcode and CocoaPods):
+
+```bash
+pnpm exec supabase start   # local auth, API and database
+pnpm db:env                # writes apps/mobile/.env.local for the local stack
+pnpm app                   # builds the development app and opens the Simulator
+```
+
+Sign-in codes from the local stack land in Mailpit: http://127.0.0.1:54324.

@@ -7,7 +7,7 @@
     "node": ">=22"
   },
   "scripts": {
-    "typecheck": "tsc --noEmit -p tsconfig.json",
+    "typecheck": "tsc --noEmit -p tsconfig.json && pnpm --filter @inn/mobile typecheck",
     "lint": "eslint .",
     "test": "vitest run",
     "sim": "pnpm --filter @inn/sim start",
@@ -15,7 +15,9 @@
     "db:start": "supabase db start",
     "db:reset": "supabase db reset --local",
     "db:test": "supabase test db",
-    "db:types": "supabase gen types typescript --local --schema public > packages/schema/src/database.ts"
+    "db:types": "supabase gen types typescript --local --schema public > packages/schema/src/database.ts",
+    "db:env": "sh scripts/db-env.sh",
+    "app": "pnpm --filter @inn/mobile ios"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

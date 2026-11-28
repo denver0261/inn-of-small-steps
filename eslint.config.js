@@ -27,8 +27,12 @@ const engineIsPure = {
 };
 
 export default tseslint.config(
-  { ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**", "packages/schema/src/database.ts"] },
+  { ignores: ["**/node_modules/**", "**/dist/**", "**/coverage/**", "packages/schema/src/database.ts", "apps/*/ios/**", "apps/*/android/**", "apps/*/.expo/**", "apps/*/expo-env.d.ts"] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  {
+    // `const { dropped: _, ...rest } = obj` is how we omit a field on purpose.
+    rules: { "@typescript-eslint/no-unused-vars": ["error", { ignoreRestSiblings: true, varsIgnorePattern: "^_" }] },
+  },
   engineIsPure,
 );
