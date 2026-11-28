@@ -246,3 +246,53 @@ export const ExpeditionEvent = z.object({
     .max(3),
 });
 export type ExpeditionEvent = z.infer<typeof ExpeditionEvent>;
+
+// M4: visitors and quests --------------------------------------------------------
+
+/**
+ * What a quest asks, measured from logs the players already make. `domain_count`: N logs
+ * in a domain within the window. `daily_domain`: a log in the domain on each of N days in
+ * a row. `chores`: N chores checked off. Co-op quests count both players.
+ */
+export const QuestSpec = z.object({
+  kind: z.enum(["domain_count", "daily_domain", "chores"]),
+  domain: Domain.optional(),
+  target: z.number().int().min(1),
+  /** Days the quest runs once accepted, starting the next day. */
+  days: z.number().int().min(1).max(14),
+  coop: z.boolean(),
+  /** One line, the visitor's ask in plain words. */
+  ask: z.string().min(1),
+});
+export type QuestSpec = z.infer<typeof QuestSpec>;
+
+/** Someone who knocks on the house's door with a quest. */
+export const VisitorTemplate = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** How they arrive and what they say, for the house screen. Original prose. */
+  line: z.string().min(1),
+  rarity: z.enum(["common", "uncommon", "rare"]),
+  /** An upgrade the house needs before they'll come (the yard draws the Watch). */
+  needsUpgrade: z.string().min(1).optional(),
+  /** Only arrives after an evening at the Wandering Inn, or once the door is built. */
+  fromInn: z.boolean(),
+  quest: QuestSpec,
+  reward: z.object({ resources: z.partialRecord(z.enum(["coins", "supplies", "mana", "goodwill"]), z.number().int().min(0)), recruit: z.string().min(1).optional() }),
+  /** What they say when the quest is done. */
+  thanks: z.string().min(1),
+});
+export type VisitorTemplate = z.infer<typeof VisitorTemplate>;
+
+/** Someone who stays on after a quest and helps around the house every night. */
+export const Recruit = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  perNight: z.partialRecord(z.enum(["coins", "supplies", "mana", "goodwill"]), z.number().int().min(0)),
+});
+export type Recruit = z.infer<typeof Recruit>;
+
+/** A short evening at the Wandering Inn, shown at once. */
+export const InnScene = z.object({ id: z.string().min(1), text: z.string().min(1) });
+export type InnScene = z.infer<typeof InnScene>;

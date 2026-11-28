@@ -1,4 +1,4 @@
-import { classPath, EVOLUTION_QUALIFIERS, ITEMS, RECIPES, SKILL_CATALOG, TIER1_EVENTS, UPGRADES, upgrade as upgradeDef, item as itemDef } from "@inn/content";
+import { classPath, EVOLUTION_QUALIFIERS, ITEMS, RECIPES, RECRUITS, SKILL_CATALOG, TIER1_EVENTS, UPGRADES, VISITORS, upgrade as upgradeDef, item as itemDef } from "@inn/content";
 import {
   addDays,
   closeDay,
@@ -141,7 +141,10 @@ async function settleHouse(db: NightDb, householdId: string, members: readonly P
       builds: orders.filter((o) => o.kind === "build").map((o) => o.ref),
       crafts: orders.filter((o) => o.kind === "craft").map((o) => o.ref),
       skillThemes: [...new Set([...states.values()].flatMap((s) => s.skills.map((k) => k.theme)))],
-      content: { upgrades: UPGRADES, recipes: RECIPES, items: ITEMS, events: TIER1_EVENTS },
+      // Visitor orders and quest activity are wired in with the M4 tables.
+      visitorOrders: [],
+      activity: [],
+      content: { upgrades: UPGRADES, recipes: RECIPES, items: ITEMS, events: TIER1_EVENTS, visitors: VISITORS, recruits: RECRUITS },
     },
     tuning,
   );

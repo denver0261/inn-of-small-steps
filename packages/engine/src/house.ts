@@ -1,11 +1,13 @@
-import type { Domain, ExpeditionEvent, ItemDef, LocalDate, Loot, Recipe, Resources, Upgrade } from "@inn/schema";
+import type { Domain, ExpeditionEvent, ItemDef, LocalDate, Loot, Recipe, Recruit, Resources, Upgrade, VisitorTemplate } from "@inn/schema";
+import { addDays } from "./dates.ts";
 import { addResources, canAfford, NO_RESOURCES, spend } from "./economy.ts";
 import { resolveOuting, type ExpeditionContext, type OutingRecord, type OutingResult } from "./expedition.ts";
-import { mulberry32, hashSeed } from "./rng.ts";
+import { mulberry32, hashSeed, seeded } from "./rng.ts";
+import { acceptOffer, arrivalChance, drawVisitor, eligibleVisitors, questProgress, type ActiveQuest, type DayActivity, type VisitorOffer } from "./visitors.ts";
 import type { Tuning } from "./tuning.ts";
 
 /** Bumped when the saved shape changes. */
-export const HOUSE_VERSION = 1;
+export const HOUSE_VERSION = 2;
 
 /** The shared house: both players add to it, and nothing in it ever decays. */
 export interface HouseState {
@@ -17,14 +19,24 @@ export interface HouseState {
   stash: Readonly<Record<string, number>>;
   /** Times each recipe has been made; mastery comes with practice. */
   mastery: Readonly<Record<string, number>>;
+  /** Visitors waiting with an offer. */
+  visitors: readonly VisitorOffer[];
+  /** Accepted quests still running. */
+  quests: readonly ActiveQuest[];
+  /** Quests finished, by visitor template. */
+  questsDone: Readonly<Record<string, number>>;
+  /** People who stayed on and help every night. */
+  recruits: readonly string[];
   lastClosed?: LocalDate;
 }
 
-export const NEW_HOUSE: HouseState = { version: HOUSE_VERSION, resources: { ...NO_RESOURCES }, upgrades: ["cots"], stash: {}, mastery: {} };
+export const NEW_HOUSE: HouseState = { version: HOUSE_VERSION, resources: { ...NO_RESOURCES }, upgrades: ["cots"], stash: {}, mastery: {}, visitors: [], quests: [], questsDone: {}, recruits: [] };
 
 export function migrateHouse(saved: unknown): HouseState {
-  const h = saved as Partial<HouseState>;
+  const h = saved as Partial<HouseState> & { version?: number };
   if (h.version === HOUSE_VERSION) return h as HouseState;
+  // v1 (M3): no visitors yet.
+  if (h.version === 1) return { ...(h as Omit<HouseState, "version" | "visitors" | "quests" | "questsDone" | "recruits">), version: HOUSE_VERSION, visitors: [], quests: [], questsDone: {}, recruits: [] };
   throw new Error(`unknown house state version: ${String(h.version)}`);
 }
 
@@ -33,6 +45,8 @@ export interface HouseContent {
   recipes: readonly Recipe[];
   items: readonly ItemDef[];
   events: readonly ExpeditionEvent[];
+  visitors: readonly VisitorTemplate[];
+  recruits: readonly Recruit[];
 }
 
 /** One player's part in the house's night. */
@@ -59,6 +73,10 @@ export interface HouseNightInput {
   crafts: readonly string[];
   /** Skill themes anyone in the house holds (the garden needs Spirit). */
   skillThemes: readonly Domain[];
+  /** Today's visitor orders, in order: accept or decline an offer, serve a visitor, an evening at the Inn. */
+  visitorOrders: readonly { playerId: string; kind: "accept" | "decline" | "serve" | "inn"; ref: string }[];
+  /** Everyone's activity over the active quests' windows, through `date`. */
+  activity: readonly DayActivity[];
   content: HouseContent;
 }
 
@@ -78,7 +96,16 @@ export type HouseEvent =
   | { type: "built"; upgradeId: string }
   | { type: "build_refused"; upgradeId: string; reason: "built" | "order" | "skill" | "cost" }
   | { type: "crafted"; recipeId: string; itemId: string; qty: number; fine: boolean }
-  | { type: "craft_refused"; recipeId: string; reason: "station" | "cost" | "unknown" };
+  | { type: "craft_refused"; recipeId: string; reason: "station" | "cost" | "unknown" }
+  | { type: "quest_accepted"; playerId: string; quest: ActiveQuest }
+  | { type: "visitor_declined"; offerId: string }
+  | { type: "served"; offerId: string; itemId: string; goodwill: number }
+  | { type: "inn_evening"; playerId: string; goodwill: number }
+  | { type: "recruit_income"; recruitId: string; resources: Resources }
+  | { type: "quest_done"; quest: ActiveQuest; reward: Resources; recruit?: string }
+  | { type: "quest_expired"; quest: ActiveQuest; done: number; target: number }
+  | { type: "visitor_left"; offerId: string }
+  | { type: "visitor_arrived"; offer: VisitorOffer };
 
 export interface HouseNightResult {
   house: HouseState;
@@ -182,7 +209,88 @@ export function closeHouseNight(house: HouseState, input: HouseNightInput, tunin
     events.push({ type: "crafted", recipeId: r.id, itemId: r.output.itemId, qty, fine });
   });
 
-  return { house: { version: HOUSE_VERSION, resources, upgrades, stash, mastery, lastClosed: input.date }, events, players };
+  // Visitors: tonight's answers, the recruits' help, quests, departures, then tomorrow's knocks.
+  let offers = [...house.visitors];
+  let quests = [...house.quests];
+  const questsDone: Record<string, number> = { ...house.questsDone };
+  const recruits = [...house.recruits];
+  const template = (id: string) => input.content.visitors.find((t) => t.id === id);
+  const innPlayers = new Set<string>();
+  for (const o of input.visitorOrders) {
+    if (o.kind === "inn") {
+      if (innPlayers.has(o.playerId)) continue;
+      innPlayers.add(o.playerId);
+      resources = addResources(resources, { goodwill: tuning.visitors.innGoodwill });
+      events.push({ type: "inn_evening", playerId: o.playerId, goodwill: tuning.visitors.innGoodwill });
+      continue;
+    }
+    const offer = offers.find((x) => x.id === o.ref);
+    const t = offer && template(offer.templateId);
+    if (!offer || !t) continue;
+    if (o.kind === "accept") {
+      const quest = acceptOffer(offer, t, o.playerId, input.date);
+      quests.push(quest);
+      offers = offers.filter((x) => x.id !== offer.id);
+      events.push({ type: "quest_accepted", playerId: o.playerId, quest });
+    } else if (o.kind === "decline") {
+      offers = offers.filter((x) => x.id !== offer.id);
+      events.push({ type: "visitor_declined", offerId: offer.id });
+    } else if (o.kind === "serve") {
+      const dish = input.content.items.find((i) => i.goodwill && (stash[i.id] ?? 0) > 0);
+      if (!dish?.goodwill) continue;
+      stash[dish.id] = stash[dish.id]! - 1;
+      resources = addResources(resources, { goodwill: dish.goodwill });
+      events.push({ type: "served", offerId: offer.id, itemId: dish.id, goodwill: dish.goodwill });
+    }
+  }
+
+  for (const id of recruits) {
+    const r = input.content.recruits.find((x) => x.id === id);
+    if (!r) continue;
+    resources = addResources(resources, r.perNight);
+    events.push({ type: "recruit_income", recruitId: id, resources: r.perNight });
+  }
+
+  for (const quest of [...quests]) {
+    const t = template(quest.templateId);
+    if (!t || input.date < quest.startDate) continue;
+    const p = questProgress(quest, t.quest, input.activity, input.date);
+    if (p.met) {
+      resources = addResources(resources, t.reward.resources);
+      const recruit = t.reward.recruit && !recruits.includes(t.reward.recruit) ? t.reward.recruit : undefined;
+      if (recruit) recruits.push(recruit);
+      questsDone[t.id] = (questsDone[t.id] ?? 0) + 1;
+      quests = quests.filter((q) => q.id !== quest.id);
+      events.push({ type: "quest_done", quest, reward: t.reward.resources, ...(recruit ? { recruit } : {}) });
+    } else if (p.over) {
+      quests = quests.filter((q) => q.id !== quest.id);
+      events.push({ type: "quest_expired", quest, done: p.done, target: p.target });
+    }
+  }
+
+  for (const offer of offers.filter((o) => o.leavesOn <= input.date)) events.push({ type: "visitor_left", offerId: offer.id });
+  offers = offers.filter((o) => o.leavesOn > input.date);
+
+  const rng = seeded(input.householdId, input.date, "visitors");
+  const tomorrow = addDays(input.date, 1);
+  const knock = (t: VisitorTemplate | undefined) => {
+    if (!t || offers.length >= tuning.visitors.maxOffers) return;
+    const offer: VisitorOffer = { id: `${t.id}:${tomorrow}`, templateId: t.id, arrivedOn: tomorrow, leavesOn: addDays(tomorrow, tuning.visitors.staysDays - 1) };
+    offers.push(offer);
+    events.push({ type: "visitor_arrived", offer });
+  };
+  const ctx = () => ({ upgrades, goodwill: resources.goodwill, innTonight: innPlayers.size > 0, busy: [...offers.map((o) => o.templateId), ...quests.map((q) => q.templateId)] });
+  if (innPlayers.size > 0) knock(drawVisitor(eligibleVisitors(input.content.visitors, ctx(), true), resources.goodwill, rng, tuning));
+  const rolls = upgrades.includes("guest_room") ? 2 : 1;
+  for (let i = 0; i < rolls; i++) {
+    if (rng() < arrivalChance(resources.goodwill, tuning)) knock(drawVisitor(eligibleVisitors(input.content.visitors, ctx(), false), resources.goodwill, rng, tuning));
+  }
+
+  return {
+    house: { version: HOUSE_VERSION, resources, upgrades, stash, mastery, visitors: offers, quests, questsDone, recruits, lastClosed: input.date },
+    events,
+    players,
+  };
 }
 
 /**

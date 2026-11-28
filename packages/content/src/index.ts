@@ -4,3 +4,4 @@ export * from "./skills.ts";
 export * from "./scenes.ts";
 export * from "./house.ts";
 export * from "./expeditions.ts";
+export * from "./visitors.ts";

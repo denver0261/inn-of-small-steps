@@ -43,7 +43,7 @@ const RECIPES: Recipe[] = [
   { id: "stew", name: "Stew", station: "cookfire", cost: { supplies: 4 }, output: { itemId: "stew", qty: 2 }, description: "x" },
   { id: "feast", name: "Feast", station: "kitchen", cost: { supplies: 1 }, output: { itemId: "stew", qty: 1 }, description: "x" },
 ];
-const content = { upgrades: UPGRADES, recipes: RECIPES, items: ITEMS, events: EVENTS };
+const content = { upgrades: UPGRADES, recipes: RECIPES, items: ITEMS, events: EVENTS, visitors: [], recruits: [] };
 
 const player = (over: Partial<HousePlayerInput> = {}): HousePlayerInput => ({
   playerId: "p1",
@@ -54,7 +54,7 @@ const player = (over: Partial<HousePlayerInput> = {}): HousePlayerInput => ({
   meals: [],
   ...over,
 });
-const night = (over: Partial<HouseNightInput> = {}): HouseNightInput => ({ date: MON, householdId: "h1", players: [player()], builds: [], crafts: [], skillThemes: [], content, ...over });
+const night = (over: Partial<HouseNightInput> = {}): HouseNightInput => ({ date: MON, householdId: "h1", players: [player()], builds: [], crafts: [], skillThemes: [], visitorOrders: [], activity: [], content, ...over });
 
 describe("earnings", () => {
   it("pays coins for every log and the rest by domain and tier", () => {
