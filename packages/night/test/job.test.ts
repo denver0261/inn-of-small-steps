@@ -97,6 +97,24 @@ describe("the nightly job", () => {
     expect(db.stories.get(`h1|${START}`)?.scene).toMatch(/Working kitchen is finished overnight/);
   });
 
+  it("runs a visitor's quest from acceptance to reward, from the habits logged anyway", async () => {
+    const db = house();
+    const offer = { id: `gnoll_butcher:${START}`, templateId: "gnoll_butcher", arrivedOn: START, leavesOn: "2027-01-06" };
+    db.houseStates.set("h1", { ...NEW_HOUSE, visitors: [offer] });
+    db.orders_.push({ householdId: "h1", date: START, playerId: "sam", kind: "accept", ref: offer.id });
+    db.orders_.push({ householdId: "h1", date: START, playerId: "kyle", kind: "inn", ref: "inn" });
+    for (const d of ["2027-01-05", "2027-01-06", "2027-01-07"]) db.logs_.push({ playerId: "sam", habitId: "eat", date: d, kind: "full", source: "tap" });
+    await run(db, "2027-01-08T10:15:00Z");
+    const nights = ["2027-01-04", "2027-01-05", "2027-01-06", "2027-01-07"].map((d) => db.houseNights.get(`h1|${d}`)!.events.map((e) => e.type));
+    expect(nights[0]).toEqual(expect.arrayContaining(["quest_accepted", "inn_evening", "visitor_arrived"]));
+    expect(nights[3]).toContain("quest_done");
+    const h = db.houseStates.get("h1") as { questsDone: Record<string, number>; resources: { goodwill: number } };
+    expect(h.questsDone.gnoll_butcher).toBe(1);
+    expect(h.resources.goodwill).toBeGreaterThanOrEqual(3 + 1);
+    expect(db.stories.get("h1|2027-01-07")?.scene).toMatch(/lost the bet on purpose/);
+    expect(db.stories.get(`h1|${START}`)?.scene).toMatch(/Kyle spent the evening at the Wandering Inn/);
+  });
+
   it("recovers if a run died between the house's night and the players'", async () => {
     const db = house();
     db.states.set("kyle", { ...NEW_PLAYER_STATE, stamina: 20 });

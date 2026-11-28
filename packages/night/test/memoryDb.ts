@@ -1,6 +1,6 @@
 import type { HouseEvent, HousePlayerResult, LevelEvent, NightChoices } from "@inn/engine";
 import type { Goal, HabitLog, LocalDate, Pause } from "@inn/schema";
-import type { HabitRow, NightDb, PlayerRow, StoryRecord } from "../src/db.ts";
+import type { HabitRow, NightDb, OrderKind, PlayerRow, StoryRecord } from "../src/db.ts";
 
 /** An in-memory NightDb that mirrors the database's rules (one close per day, one morning per house and day). */
 export class MemoryDb implements NightDb {
@@ -18,7 +18,7 @@ export class MemoryDb implements NightDb {
   houseStates = new Map<string, unknown>();
   houseNights = new Map<string, { events: HouseEvent[]; players: Record<string, HousePlayerResult> }>();
   outings_: { playerId: string; date: LocalDate; index: number; choices: number[] }[] = [];
-  orders_: { householdId: string; date: LocalDate; playerId: string; kind: "build" | "craft" | "meal"; ref: string }[] = [];
+  orders_: { householdId: string; date: LocalDate; playerId: string; kind: OrderKind; ref: string }[] = [];
 
   sleep(playerId: string, date: LocalDate) {
     if (!this.closes.has(`${playerId}|${date}`)) this.closes.set(`${playerId}|${date}`, { source: "sleep", processed: false });
@@ -53,6 +53,9 @@ export class MemoryDb implements NightDb {
   }
   async logs(playerId: string, date: LocalDate) {
     return this.logs_.filter((l) => l.playerId === playerId && l.date === date).map(({ playerId: _, ...l }) => l);
+  }
+  async logsBetween(playerId: string, from: LocalDate, to: LocalDate) {
+    return this.logs_.filter((l) => l.playerId === playerId && l.date >= from && l.date <= to).map(({ playerId: _, ...l }) => l);
   }
   async choices(playerId: string, date: LocalDate) {
     return this.choices_.get(`${playerId}|${date}`) ?? {};

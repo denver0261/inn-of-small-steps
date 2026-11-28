@@ -1,6 +1,8 @@
 import type { HouseEvent, HousePlayerResult, LevelEvent, NightChoices } from "@inn/engine";
 import type { Goal, Habit, HabitLog, LocalDate, Pause } from "@inn/schema";
 
+export type OrderKind = "build" | "craft" | "meal" | "accept" | "decline" | "serve" | "inn";
+
 export interface PlayerRow {
   id: string;
   householdId: string | null;
@@ -29,6 +31,8 @@ export interface NightDb {
   goals(playerId: string): Promise<Goal[]>;
   pauses(playerId: string): Promise<Pause[]>;
   logs(playerId: string, date: LocalDate): Promise<HabitLog[]>;
+  /** Logs from `from` through `to`, for quest progress. */
+  logsBetween(playerId: string, from: LocalDate, to: LocalDate): Promise<HabitLog[]>;
   choices(playerId: string, date: LocalDate): Promise<NightChoices>;
   /** Atomically saves state and events and marks the day processed. */
   recordNight(playerId: string, date: LocalDate, state: unknown, events: readonly LevelEvent[]): Promise<void>;
@@ -50,7 +54,7 @@ export interface NightDb {
   /** A player's outings on a day: index and choices only (the seed is derived). */
   outings(playerId: string, date: LocalDate): Promise<{ index: number; choices: number[] }[]>;
   /** The house's orders for a day, oldest first. */
-  orders(householdId: string, date: LocalDate): Promise<{ playerId: string; kind: "build" | "craft" | "meal"; ref: string }[]>;
+  orders(householdId: string, date: LocalDate): Promise<{ playerId: string; kind: OrderKind; ref: string }[]>;
 }
 
 export interface StoryRecord {
