@@ -1,18 +1,7 @@
 import { skillDef } from "@inn/content";
-import { tierValue, type LevelEvent, type PlayerState } from "@inn/engine";
-import type { Habit, SkillDef } from "@inn/schema";
+import { fallbackSkillName, skillSummary, type LevelEvent, type PlayerState } from "@inn/engine";
+import type { Habit } from "@inn/schema";
 import type { PlayerNight } from "./schema.ts";
-
-/** Fills a catalog summary's {n} with the tier's number. */
-export function skillSummary(def: SkillDef, tier: number): string {
-  const e = def.effect;
-  const n = e.kind === "grace_day" ? tierValue(e.chargesPerWeek, tier) : tierValue(e.percent, tier);
-  return def.summary.replace("{n}", String(n));
-}
-
-export function fallbackSkillName(def: SkillDef, tier: number): string {
-  return def.fallbackNames[Math.min(tier, def.fallbackNames.length) - 1] ?? def.fallbackNames[0]!;
-}
 
 export interface PlayerInfo {
   playerId: string;

@@ -156,6 +156,35 @@ export function Choice<T extends string | number>({
   );
 }
 
+/** The System's voice: bracketed messages in a framed window, the way the series prints them. */
+export function SystemBox({ lines, children }: { lines: readonly string[]; children?: ReactNode }) {
+  const t = useTheme();
+  return (
+    <View style={[styles.system, { borderColor: t.accent, backgroundColor: t.card }]}>
+      {lines.map((line, i) => (
+        <Text key={i} style={{ color: t.text, fontFamily: "Georgia", fontSize: 17, lineHeight: 26, fontWeight: "600" }}>
+          {line}
+        </Text>
+      ))}
+      {children}
+    </View>
+  );
+}
+
+/** A thin bar for progress toward the next level. */
+export function ProgressBar({ value, label }: { value: number; label?: string }) {
+  const t = useTheme();
+  const pct = Math.max(0, Math.min(1, value));
+  return (
+    <View style={{ marginVertical: 6 }}>
+      <View style={{ height: 8, borderRadius: 4, backgroundColor: t.line, overflow: "hidden" }}>
+        <View style={{ width: `${pct * 100}%`, height: 8, backgroundColor: t.accent }} />
+      </View>
+      {label ? <Text style={{ color: t.muted, fontSize: 13, marginTop: 4 }}>{label}</Text> : null}
+    </View>
+  );
+}
+
 export function ErrorText({ error }: { error: string | null | undefined }) {
   const t = useTheme();
   return error ? <Text style={{ color: t.danger, marginVertical: 8 }}>{error}</Text> : null;
@@ -175,6 +204,7 @@ export function Row({ children, gap = 8 }: { children: ReactNode; gap?: number }
 }
 
 const styles = StyleSheet.create({
+  system: { borderWidth: 1.5, borderRadius: 6, padding: 14, marginBottom: 12, gap: 2 },
   body: { padding: 20, paddingBottom: 48 },
   title: { fontSize: 30, fontWeight: "700", fontFamily: "Georgia" },
   heading: { fontSize: 13, fontWeight: "700", letterSpacing: 1, textTransform: "uppercase", marginTop: 20, marginBottom: 8 },

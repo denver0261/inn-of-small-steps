@@ -132,3 +132,15 @@ export function evolutionOptions(
   const base = className.replace(/^\[|\]$/g, "");
   return chosen.map((domain) => ({ id: `evo_${domain}`, domain, fallbackName: `[${qualifiers[domain] ?? "Seasoned"} ${base}]` }));
 }
+
+/** A catalog summary with its {n} filled in for a tier ("+15% XP on Endurance habits."). */
+export function skillSummary(def: SkillDef, tier: number): string {
+  const e = def.effect;
+  const n = e.kind === "grace_day" ? tierValue(e.chargesPerWeek, tier) : tierValue(e.percent, tier);
+  return def.summary.replace("{n}", String(n));
+}
+
+/** The name used when the System hasn't named a Skill (or narration failed). */
+export function fallbackSkillName(def: SkillDef, tier: number): string {
+  return def.fallbackNames[Math.min(tier, def.fallbackNames.length) - 1] ?? def.fallbackNames[0] ?? `[${def.id}]`;
+}
