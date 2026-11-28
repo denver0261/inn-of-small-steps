@@ -209,7 +209,7 @@ Four currencies and one fuel.
 2. Working kitchen: unlocks dishes (Nourish)
 3. Training yard: unlocks Strength quests and sparring with the Watch
 4. Supply shed: carry more home from expeditions (Endurance)
-5. Garden: needs a Spirit Skill; doubles rest buffs
+5. Garden: needs a Spirit Skill; doubles rest buffs. Optional: the rungs above it don't wait on it ([decision 0011](decisions/0011-m3-house-engine.md)).
 6. Guest room and a door link to the Wandering Inn: friends and canon visitors can stay
 
 ### Visitors and quests

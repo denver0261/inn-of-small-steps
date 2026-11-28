@@ -58,3 +58,12 @@ export function checkOffChore(
     log: { habitId: homeHabitId, date, kind: "full", tier: chore.size, source: "tap", choreId: chore.id },
   };
 }
+
+/**
+ * How a real room's chores show in its Liscor twin: tidy, dusty (something 1-3 days
+ * overdue) or cluttered (4+). Only a look; it never takes anything away.
+ */
+export function roomLook(chores: readonly Chore[], roomId: string, date: LocalDate): "tidy" | "dusty" | "cluttered" {
+  const worst = Math.max(0, ...chores.filter((c) => c.roomId === roomId).map((c) => overdueDays(c, date)));
+  return worst >= 4 ? "cluttered" : worst >= 1 ? "dusty" : "tidy";
+}
