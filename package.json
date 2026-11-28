@@ -17,7 +17,9 @@
     "db:test": "supabase test db",
     "db:types": "supabase gen types typescript --local --schema public > packages/schema/src/database.ts",
     "db:env": "sh scripts/db-env.sh",
-    "app": "pnpm --filter @inn/mobile ios"
+    "app": "pnpm --filter @inn/mobile ios",
+    "night": "pnpm --filter @inn/night start",
+    "night:local": "sh scripts/night-local.sh"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

@@ -45,18 +45,38 @@ isOneToOne: false
                   ]
                 },"day_closes": {
                   Row: {
-                    "closed_at": string,"date": string,"player_id": string
+                    "closed_at": string,"date": string,"player_id": string,"processed_at": string | null,"source": string
                   }
                   ComputedFields: never
                   Insert: {
-                    "closed_at"?: string,"date": string,"player_id": string
+                    "closed_at"?: string,"date": string,"player_id": string,"processed_at"?: string | null,"source"?: string
                   }
                   Update: {
-                    "closed_at"?: string,"date"?: string,"player_id"?: string
+                    "closed_at"?: string,"date"?: string,"player_id"?: string,"processed_at"?: string | null,"source"?: string
                   }
                   Relationships: [
                     {
       foreignKeyName: "day_closes_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"evolution_names": {
+                  Row: {
+                    "name": string,"option_id": string,"player_id": string,"text": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "name": string,"option_id": string,"player_id": string,"text": string
+                  }
+                  Update: {
+                    "name"?: string,"option_id"?: string,"player_id"?: string,"text"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "evolution_names_player_id_fkey"
       columns: ["player_id"]
 isOneToOne: false
       referencedRelation: "players"
@@ -201,6 +221,46 @@ isOneToOne: false
                   Relationships: [
                     
                   ]
+                },"level_events": {
+                  Row: {
+                    "date": string,"events": NonNullable<Json>,"player_id": string,"state_after": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "date": string,"events": NonNullable<Json>,"player_id": string,"state_after": NonNullable<Json>
+                  }
+                  Update: {
+                    "date"?: string,"events"?: NonNullable<Json>,"player_id"?: string,"state_after"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "level_events_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"night_choices": {
+                  Row: {
+                    "date": string,"evolution": string | null,"grace": (string)[],"player_id": string,"reroll_evolution": boolean,"skill": string | null
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "date": string,"evolution"?: string | null,"grace"?: (string)[],"player_id"?: string,"reroll_evolution"?: boolean,"skill"?: string | null
+                  }
+                  Update: {
+                    "date"?: string,"evolution"?: string | null,"grace"?: (string)[],"player_id"?: string,"reroll_evolution"?: boolean,"skill"?: string | null
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "night_choices_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"pauses": {
                   Row: {
                     "end_date": string,"habit_ids": (string)[] | null,"id": string,"player_id": string,"reason": string | null,"start_date": string
@@ -217,6 +277,26 @@ isOneToOne: false
       foreignKeyName: "pauses_player_id_fkey"
       columns: ["player_id"]
 isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"player_states": {
+                  Row: {
+                    "player_id": string,"state": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "player_id": string,"state": NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "player_id"?: string,"state"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "player_states_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: true
       referencedRelation: "players"
       referencedColumns: ["id"]
     }
@@ -261,6 +341,66 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"skill_names": {
+                  Row: {
+                    "def_id": string,"name": string,"player_id": string,"text": string,"tier": number
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "def_id": string,"name": string,"player_id": string,"text": string,"tier": number
+                  }
+                  Update: {
+                    "def_id"?: string,"name"?: string,"player_id"?: string,"text"?: string,"tier"?: number
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "skill_names_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"story_entries": {
+                  Row: {
+                    "created_at": string,"date": string,"error": string | null,"household_id": string,"prompt_version": string,"scene": string,"source": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"date": string,"error"?: string | null,"household_id": string,"prompt_version": string,"scene": string,"source": string
+                  }
+                  Update: {
+                    "created_at"?: string,"date"?: string,"error"?: string | null,"household_id"?: string,"prompt_version"?: string,"scene"?: string,"source"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "story_entries_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"system_messages": {
+                  Row: {
+                    "date": string,"messages": (string)[],"player_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "date": string,"messages": (string)[],"player_id": string
+                  }
+                  Update: {
+                    "date"?: string,"messages"?: (string)[],"player_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "system_messages_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
                 }
           }
           Views: {
@@ -282,8 +422,20 @@ isOneToOne: false
 "day_is_open":
 { Args: { "d": string,"p": string }; Returns: boolean
                            },
+"game_date":
+{ Args: { "at"?: string,"tz": string }; Returns: string
+                           },
+"go_to_sleep":
+{ Args: Record<PropertyKey, never>; Returns: string
+                           },
 "my_household":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"record_night":
+{ Args: { "d": string,"day_events": Json,"new_state": Json,"p": string }; Returns: undefined
+                           },
+"record_story":
+{ Args: { "d": string,"err": string,"house": string,"players": Json,"scene": string,"src": string,"version": string }; Returns: undefined
                            }
           }
           Enums: {

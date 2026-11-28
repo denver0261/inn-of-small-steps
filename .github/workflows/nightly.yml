@@ -1,0 +1,38 @@
+name: Nightly System
+
+# Runs the nightly close (packages/night) against the production Supabase project.
+# Off until the players turn it on: set the repository variable NIGHTLY_ENABLED=true and
+# the secrets SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY and (for Claude's mornings)
+# ANTHROPIC_API_KEY. Every run is idempotent, so running often is safe.
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: nightly
+  cancel-in-progress: false
+
+jobs:
+  night:
+    if: vars.NIGHTLY_ENABLED == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm night
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          NARRATOR_MODEL: ${{ vars.NARRATOR_MODEL }}

@@ -357,7 +357,7 @@ flowchart LR
   Backend -->|morning push| App
 ```
 
-The app works offline and syncs logs. Steps come straight from Apple Health through a HealthKit library (needs an Expo development build, not Expo Go). When the nightly job finishes, a push notification tells each player their level-ups are waiting. The nightly job is the only code that calls Claude, which keeps the API key server-side.
+The nightly job is a Node script in `packages/night` that runs every 15 minutes on a schedule, so it imports the same engine as the app ([decision 0009](decisions/0009-m2-nightly-job.md)). The app works offline and syncs logs. Steps come straight from Apple Health through a HealthKit library (needs an Expo development build, not Expo Go). When the nightly job finishes, a push notification tells each player their level-ups are waiting. The nightly job is the only code that calls Claude, which keeps the API key server-side.
 
 **Health data stays minimal.** Only workout type, start and end time, duration and distance, plus nightly sleep duration, leave the phone; no heart rate or raw samples. Each player's health details, and the reasons for their pauses, are visible only to them; your partner sees that a habit was done, not the details. Deleting your account deletes everything. Apple requires a privacy policy for apps that use HealthKit, so write a short one before inviting anyone beyond the two of you.
 
