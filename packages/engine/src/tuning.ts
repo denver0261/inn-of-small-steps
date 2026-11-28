@@ -22,6 +22,10 @@ export interface Tuning {
   skillSlotLevels: readonly number[];
   /** Apple Health workouts at or over this many minutes are big; shorter ones are normal. */
   workoutBigFromMin: { cycling: number; strength: number };
+  /** All Skill XP bonuses on one log together cap at this share (+50%). */
+  skillXpCap: number;
+  /** The capstone level: a Skill choice (1 of 2) and a class evolution offer instead of a plain grant. */
+  capstoneLevel: number;
   /** Active habits a player may have: `initial` at first, `later` once `afterDays` have passed. FLAGGED: `later`. */
   habitSlots: { initial: number; afterDays: number; later: number };
 }
@@ -37,4 +41,6 @@ export const DEFAULT_TUNING: Tuning = {
   skillSlotLevels: [2, 4, 6, 8, 10],
   workoutBigFromMin: { cycling: 30, strength: 45 },
   habitSlots: { initial: 5, afterDays: 14, later: 8 },
+  skillXpCap: 0.5,
+  capstoneLevel: 10,
 };

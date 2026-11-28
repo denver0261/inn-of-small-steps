@@ -125,3 +125,48 @@ export const HealthWorkout = z.object({
   fromGarmin: z.boolean(),
 });
 export type HealthWorkout = z.infer<typeof HealthWorkout>;
+
+/** What a Skill does. Every number is per tier (index 0 = tier 1), so an upgrade is a lookup. */
+export const SkillEffect = z.discriminatedUnion("kind", [
+  /** Passive: +percent XP on logs in these domains. */
+  z.object({ kind: z.literal("xp_bonus"), domains: z.array(Domain).min(1), percent: z.array(z.number().positive()).min(1) }),
+  /** Triggered: the first log in these domains after a missed scheduled day earns +percent. */
+  z.object({ kind: z.literal("after_miss_bonus"), domains: z.array(Domain).min(1), percent: z.array(z.number().positive()).min(1) }),
+  /** Active: tap to mark a missed habit in these domains done for the day; charges refill each Monday. */
+  z.object({ kind: z.literal("grace_day"), domains: z.array(Domain).min(1), chargesPerWeek: z.array(z.number().int().positive()).min(1) }),
+]);
+export type SkillEffect = z.infer<typeof SkillEffect>;
+
+/**
+ * A Skill mechanic from the catalog. The rules pick one when a slot opens; Claude only
+ * names it. `fallbackNames[tier - 1]` is used when narration fails.
+ */
+export const SkillDef = z.object({
+  id: z.string().min(1),
+  /** The domain whose habits lead to this Skill. */
+  theme: Domain,
+  type: z.enum(["passive", "triggered", "active", "house", "partner", "expedition"]),
+  effect: SkillEffect,
+  fallbackNames: z.array(z.string().regex(/^\[.+\]$/)).min(1),
+  /** One line for the character sheet, with {n} for the tier's number. */
+  summary: z.string().min(1),
+});
+export type SkillDef = z.infer<typeof SkillDef>;
+
+/** A Skill a player holds. Skills are never lost; a second Skill in the same theme raises the tier. */
+export const SkillInstance = z.object({
+  defId: z.string().min(1),
+  theme: Domain,
+  tier: z.number().int().min(1),
+  grantedLevel: z.number().int().min(1),
+});
+export type SkillInstance = z.infer<typeof SkillInstance>;
+
+/** One of the class evolutions offered at Level 10: base class plus a qualifier from a domain. */
+export const EvolutionOption = z.object({
+  id: z.string().min(1),
+  /** The domain the qualifier comes from; the evolved class adds it to its focus domains. */
+  domain: Domain,
+  fallbackName: z.string().regex(/^\[.+\]$/),
+});
+export type EvolutionOption = z.infer<typeof EvolutionOption>;
