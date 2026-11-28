@@ -1,0 +1,27 @@
+{
+  "date": "2027-02-21",
+  "householdName": "The house by the wall",
+  "players": [
+    {
+      "playerId": "kyle",
+      "name": "Kyle",
+      "className": "[Rider]",
+      "level": 10,
+      "levelsGained": [10],
+      "skillsGained": [],
+      "skillChoice": [
+        { "defId": "long_road", "tier": 2, "theme": "endurance", "summary": "+15% XP on Endurance habits.", "fallbackName": "[Longer Road]" },
+        { "defId": "strong_back", "tier": 1, "theme": "strength", "summary": "+10% XP on Strength habits.", "fallbackName": "[Strong Back]" }
+      ],
+      "evolutionOffer": [
+        { "optionId": "evo_endurance", "domain": "endurance", "fallbackName": "[Long Road Rider]" },
+        { "optionId": "evo_nourish", "domain": "nourish", "fallbackName": "[Well-Fed Rider]" },
+        { "optionId": "evo_rest", "domain": "rest", "fallbackName": "[Dawn Rider]" }
+      ],
+      "habitsDone": ["Biking", "Sleep"],
+      "graced": [],
+      "skillsHeld": ["[Floodplain Miles]", "[Second Wind]", "[Basic Cleaning]", "[Iron Stomach]"]
+    }
+  ],
+  "recentScenes": []
+}

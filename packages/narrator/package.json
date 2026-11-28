@@ -1,0 +1,16 @@
+{
+  "name": "@inn/narrator",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./claude": "./src/claude.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^1.8.0",
+    "@inn/content": "workspace:*",
+    "@inn/engine": "workspace:*",
+    "@inn/schema": "workspace:*",
+    "zod": "^4.6.7"
+  }
+}
