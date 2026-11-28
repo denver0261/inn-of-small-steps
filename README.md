@@ -11,10 +11,18 @@ Personal fan project; not affiliated with the author of *The Wandering Inn*.
 
 ## Status
 
-M0 (the level-curve simulator) is done. Next is M1, the habit core: the Expo app, accounts, habits and goals, and the Apple Health import.
+M0 (the level-curve simulator) is done. M1, the habit core, is in progress: the habit rules and the database are in; the Expo app and the Apple Health import are next.
 
 ```bash
 pnpm install
 pnpm sim        # the 365-day level curve
 pnpm check      # typecheck, lint, test, sim
+```
+
+The database needs Docker running (OrbStack or Docker Desktop):
+
+```bash
+pnpm db:start   # local Postgres with the migrations applied
+pnpm db:test    # pgTAP access-rule tests
+pnpm db:types   # regenerate packages/schema/src/database.ts after a migration
 ```

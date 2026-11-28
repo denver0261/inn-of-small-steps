@@ -1,3 +1,6 @@
+/** Row types generated from supabase/migrations by `pnpm db:types`. Do not edit by hand. */
+export type { Database, Json } from "./database.ts";
+
 import { z } from "zod";
 
 /** A calendar day in the player's own timezone, `YYYY-MM-DD`. Never a timestamp. */

@@ -45,7 +45,7 @@ Setup takes about 10 minutes each, and the game is playable that same evening.
 4. **Bring in the chore list.** Add chores, or import from wherever the list lives now.
 5. **Choose starting habits.** Up to 5 active habits each at first, with goals (PT marked prescribed at 3x a week). More slots open after week 2 (8 in all for now), so day one isn't overwhelming.
 6. **Connect Apple Health.** Turn on Garmin Connect's Apple Health sync, then allow workouts, steps and sleep.
-7. **Invite your partner.** The second player joins the same house by invite link and does steps 2, 5 and 6.
+7. **Invite your partner.** The second player joins the same house by invite link (one use, good for 7 days) and does steps 2, 5 and 6.
 8. **First outing.** A guided Tier 1 errand that teaches stamina and choices.
 9. **Sleep.** The first night grants your class: \[Rider Level 1!\].
 
@@ -359,7 +359,7 @@ flowchart LR
 
 The app works offline and syncs logs. Steps come straight from Apple Health through a HealthKit library (needs an Expo development build, not Expo Go). When the nightly job finishes, a push notification tells each player their level-ups are waiting. The nightly job is the only code that calls Claude, which keeps the API key server-side.
 
-**Health data stays minimal.** Only workout type, start and end time, duration and distance, plus nightly sleep duration, leave the phone; no heart rate or raw samples. Each player's health details are visible only to them; your partner sees that a habit was done, not the details. Deleting your account deletes everything. Apple requires a privacy policy for apps that use HealthKit, so write a short one before inviting anyone beyond the two of you.
+**Health data stays minimal.** Only workout type, start and end time, duration and distance, plus nightly sleep duration, leave the phone; no heart rate or raw samples. Each player's health details, and the reasons for their pauses, are visible only to them; your partner sees that a habit was done, not the details. Deleting your account deletes everything. Apple requires a privacy policy for apps that use HealthKit, so write a short one before inviting anyone beyond the two of you.
 
 ### Core entities
 
