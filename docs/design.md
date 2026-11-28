@@ -422,7 +422,7 @@ A pnpm workspace monorepo, so the app, the nightly job and the simulator all imp
 
 The MVP proves one thing: waking up to a level-up message makes you want to do your habits. Everything else waits.
 
-**Cut line:** build only M0 to M2, then play for two weeks. The test: does waking up to level-ups make you both want to do the habits? If not, fix that before building the house, expeditions, crafting or loot. M3 onward stays unbuilt until the test passes.
+**Cut line:** build M0 to M4, then play for two weeks (moved from M2 by [decision 0006](decisions/0006-build-through-m4.md)). The test: does waking up to level-ups make you both want to do the habits? If not, fix that before going further. M5 onward stays unbuilt until the test passes.
 
 **In the MVP:** two player accounts, habits with tiers and domains, daily logging, Apple Health import for rides, lifting and steps, nightly level-up with Claude messages, class paths, the Skill catalog, a text-only Liscor house with 3 upgrades. **Not yet:** expedition tiers 2 and up, visitors, art, anyone beyond the two of you.
 

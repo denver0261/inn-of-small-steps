@@ -22,7 +22,7 @@ Engine entry point: `closeDay(state, input, tuning)` in packages/engine/src/nigh
 - Health data stays minimal: workout type, start/end, duration, distance, sleep duration. No heart rate or raw samples.
 
 ## Build order
-Milestones M0-M2 only until the two-week playtest passes (see "Cut line" in docs/design.md).
+Milestones M0-M4, then the two-week playtest (decision 0006 moved the design's cut line from M2 to M4). No M5 or M6 until the playtest passes.
 
 ## Maintenance
 - One branch per change (`feat/`, `fix/`, `docs/`, `chore/`), one PR to `main`. CI (GitHub Actions) must be green; then Claude merges with a squash and deletes the branch. `main` is always green.
