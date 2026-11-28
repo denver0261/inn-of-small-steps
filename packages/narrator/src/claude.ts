@@ -3,7 +3,7 @@ import { betaZodOutputFormat } from "@anthropic-ai/sdk/helpers/beta/zod";
 import { readFileSync } from "node:fs";
 import { NarrationOutput, type NarrationRequest } from "./schema.ts";
 
-export const PROMPT_VERSION = "system-v1";
+export const PROMPT_VERSION = "system-v2";
 const SYSTEM_PROMPT = readFileSync(new URL(`../../../prompts/${PROMPT_VERSION}.md`, import.meta.url), "utf8");
 
 /** The default narration model; override with NARRATOR_MODEL. */

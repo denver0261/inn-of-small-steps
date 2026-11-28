@@ -1,5 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
+import { ITEMS, TIER1_EVENTS } from "@inn/content";
+import { DEFAULT_TUNING, NEW_HOUSE, NEW_PLAYER_STATE, outingSeed, planOuting, resolveOuting } from "@inn/engine";
 import { runNight } from "../src/job.ts";
 import { MemoryDb } from "./memoryDb.ts";
 
@@ -62,17 +64,54 @@ describe("the nightly job", () => {
     expect(r.stories.map((s) => s.date)).toEqual(["2027-01-04", "2027-01-05", "2027-01-06", "2027-01-07"]);
   });
 
-  it("levels an early sleeper at once, but waits for the housemate before the morning", async () => {
+  it("waits for the housemate before settling an early sleeper's day", async () => {
     const db = house();
     await run(db, "2027-01-05T10:15:00Z");
     db.logs_.push({ playerId: "kyle", habitId: "ride", date: "2027-01-05", kind: "full", source: "apple_health", healthWorkoutId: "w2" });
     db.sleep("kyle", "2027-01-05");
     const evening = await run(db, "2027-01-06T03:00:00Z"); // 21:00 in Chicago
-    expect(evening.processed.map((p) => [p.playerId, p.date])).toEqual([["kyle", "2027-01-05"]]);
+    expect(evening.processed).toEqual([]);
     expect(evening.stories).toEqual([]);
     const morning = await run(db, "2027-01-06T10:05:00Z");
-    expect(morning.processed.map((p) => p.playerId)).toEqual(["sam"]);
+    expect(morning.processed.map((p) => p.playerId).sort()).toEqual(["kyle", "sam"]);
     expect(morning.stories.map((s) => s.date)).toEqual(["2027-01-05"]);
+  });
+
+  it("settles the house's night: income, orders and outings, and tells the morning", async () => {
+    const db = house();
+    db.houseStates.set("h1", { ...NEW_HOUSE, resources: { coins: 200, supplies: 100, mana: 0, goodwill: 0 } });
+    db.states.set("kyle", { ...NEW_PLAYER_STATE, stamina: 20 });
+    db.orders_.push({ householdId: "h1", date: START, playerId: "sam", kind: "build", ref: "kitchen" });
+    db.orders_.push({ householdId: "h1", date: START, playerId: "sam", kind: "craft", ref: "stew" });
+    db.outings_.push({ playerId: "kyle", date: START, index: 0, choices: [0, 0, 0] });
+    await run(db, "2027-01-05T10:15:00Z");
+    const h = db.houseStates.get("h1") as { upgrades: string[]; stash: Record<string, number>; resources: { coins: number } };
+    expect(h.upgrades).toContain("kitchen");
+    expect(h.stash.stew).toBeGreaterThanOrEqual(2);
+    // The outing the app previewed is the one the job paid out.
+    const seed = outingSeed("kyle", START, 0);
+    const preview = resolveOuting({ seed, eventIds: planOuting(seed, TIER1_EVENTS, DEFAULT_TUNING), choices: [0, 0, 0] }, TIER1_EVENTS, { level: 0, skills: [], pity: 0 }, ITEMS.filter((i) => i.kind === "trophy").map((i) => i.id), DEFAULT_TUNING);
+    const paid = db.houseNights.get(`h1|${START}`)!.events.find((e) => e.type === "outing");
+    expect(paid && paid.type === "outing" && paid.result).toEqual(preview);
+    expect((db.states.get("kyle") as { stamina: number }).stamina).toBe(20 - 10 + 5);
+    expect(db.stories.get(`h1|${START}`)?.scene).toMatch(/Working kitchen is finished overnight/);
+  });
+
+  it("recovers if a run died between the house's night and the players'", async () => {
+    const db = house();
+    db.states.set("kyle", { ...NEW_PLAYER_STATE, stamina: 20 });
+    db.outings_.push({ playerId: "kyle", date: START, index: 0, choices: [0, 0, 0] });
+    db.autoClose("kyle", [START]);
+    db.autoClose("sam", [START]);
+    // Simulate the crash: the house night is recorded, the players are not.
+    const realRecord = db.recordNight.bind(db);
+    db.recordNight = async () => {
+      throw new Error("crash");
+    };
+    await run(db, "2027-01-05T10:15:00Z");
+    db.recordNight = realRecord;
+    await run(db, "2027-01-05T10:30:00Z");
+    expect((db.states.get("kyle") as { stamina: number }).stamina).toBe(20 - 10 + 5);
   });
 
   it("uses Claude's morning when it validates, and keeps its Skill names for later nights", async () => {

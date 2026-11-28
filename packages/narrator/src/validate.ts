@@ -52,6 +52,7 @@ export function validateNarration(req: NarrationRequest, raw: unknown): Narratio
     return { playerId: p.playerId, levelMessages, skillNames, evolutionNames };
   });
 
+  for (const line of req.houseNews ?? []) for (const n of line.match(NUMBER) ?? []) everyAllowed.add(n);
   const stray = strayNumbers(out.morningScene, everyAllowed);
   if (stray.length > 0) throw new NarrationRejected(`invented numbers in the scene: ${stray.join(", ")}`);
   const paragraphs = out.morningScene.split(/\n\s*\n/).filter((x) => x.trim());

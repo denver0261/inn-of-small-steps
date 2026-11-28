@@ -1,5 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { LevelEvent, NightChoices } from "@inn/engine";
+import type { HouseEvent, HousePlayerResult, LevelEvent, NightChoices } from "@inn/engine";
 import type { Database, Goal, HabitLog, LocalDate, Pause } from "@inn/schema";
 import { goalFromRow, habitFromRow, logFromRow, pauseFromRow } from "@inn/schema/rows";
 import type { Json } from "@inn/schema";
@@ -89,6 +89,23 @@ export function supabaseNightDb(db: Client): NightDb {
     async evolutionName(playerId, optionId) {
       const r = maybe(await db.from("evolution_names").select("name").eq("player_id", playerId).eq("option_id", optionId).maybeSingle());
       return r?.name;
+    },
+    async houseState(householdId) {
+      return maybe(await db.from("house_states").select("state").eq("household_id", householdId).maybeSingle())?.state ?? undefined;
+    },
+    async houseNight(householdId, date) {
+      const r = maybe(await db.from("house_events").select("events, players").eq("household_id", householdId).eq("date", date).maybeSingle());
+      return r ? { events: r.events as unknown as HouseEvent[], players: r.players as unknown as Record<string, HousePlayerResult> } : undefined;
+    },
+    async recordHouseNight(householdId, date, state, events, players) {
+      ok(await db.rpc("record_house_night", { house: householdId, d: date, new_state: state as Json, night_events: events as unknown as Json, night_players: players as unknown as Json }));
+    },
+    async outings(playerId, date) {
+      return ok(await db.from("outings").select("index, choices").eq("player_id", playerId).eq("date", date));
+    },
+    async orders(householdId, date) {
+      const rows = ok(await db.from("house_orders").select("player_id, kind, ref").eq("household_id", householdId).eq("date", date).order("created_at"));
+      return rows.map((r) => ({ playerId: r.player_id, kind: r.kind as "build" | "craft" | "meal", ref: r.ref }));
     },
     async recordStory(s: StoryRecord) {
       ok(

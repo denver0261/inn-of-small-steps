@@ -44,8 +44,10 @@ export const NarrationRequest = z.object({
   players: z.array(PlayerNight).min(1),
   /** The last few morning scenes, oldest first, so the story continues. */
   recentScenes: z.array(z.string()).max(7),
+  /** Plain sentences about the house's night (an upgrade finished, a stew ready), for the scene. */
+  houseNews: z.array(z.string()).max(10).default([]),
 });
-export type NarrationRequest = z.infer<typeof NarrationRequest>;
+export type NarrationRequest = z.input<typeof NarrationRequest>;
 
 /** What Claude returns. Names and prose only: the engine already decided every number. */
 export const NarrationOutput = z.object({

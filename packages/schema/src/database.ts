@@ -175,6 +175,72 @@ isOneToOne: false
       referencedColumns: ["id"]
     }
                   ]
+                },"house_events": {
+                  Row: {
+                    "date": string,"events": NonNullable<Json>,"household_id": string,"players": NonNullable<Json>
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "date": string,"events": NonNullable<Json>,"household_id": string,"players": NonNullable<Json>
+                  }
+                  Update: {
+                    "date"?: string,"events"?: NonNullable<Json>,"household_id"?: string,"players"?: NonNullable<Json>
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "house_events_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"house_orders": {
+                  Row: {
+                    "created_at": string,"date": string,"household_id": string,"id": string,"kind": string,"player_id": string,"ref": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "created_at"?: string,"date": string,"household_id"?: string,"id"?: string,"kind": string,"player_id"?: string,"ref": string
+                  }
+                  Update: {
+                    "created_at"?: string,"date"?: string,"household_id"?: string,"id"?: string,"kind"?: string,"player_id"?: string,"ref"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "house_orders_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: false
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    },{
+      foreignKeyName: "house_orders_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"house_states": {
+                  Row: {
+                    "household_id": string,"state": NonNullable<Json>,"updated_at": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "household_id": string,"state": NonNullable<Json>,"updated_at"?: string
+                  }
+                  Update: {
+                    "household_id"?: string,"state"?: NonNullable<Json>,"updated_at"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "house_states_household_id_fkey"
+      columns: ["household_id"]
+isOneToOne: true
+      referencedRelation: "households"
+      referencedColumns: ["id"]
+    }
+                  ]
                 },"household_invites": {
                   Row: {
                     "code": string,"created_at": string,"created_by": string,"expires_at": string,"household_id": string,"used_at": string | null,"used_by": string | null
@@ -255,6 +321,26 @@ isOneToOne: false
                   Relationships: [
                     {
       foreignKeyName: "night_choices_player_id_fkey"
+      columns: ["player_id"]
+isOneToOne: false
+      referencedRelation: "players"
+      referencedColumns: ["id"]
+    }
+                  ]
+                },"outings": {
+                  Row: {
+                    "choices": (number)[],"created_at": string,"date": string,"index": number,"player_id": string
+                  }
+                  ComputedFields: never
+                  Insert: {
+                    "choices"?: (number)[],"created_at"?: string,"date": string,"index": number,"player_id"?: string
+                  }
+                  Update: {
+                    "choices"?: (number)[],"created_at"?: string,"date"?: string,"index"?: number,"player_id"?: string
+                  }
+                  Relationships: [
+                    {
+      foreignKeyName: "outings_player_id_fkey"
       columns: ["player_id"]
 isOneToOne: false
       referencedRelation: "players"
@@ -430,6 +516,9 @@ isOneToOne: false
                            },
 "my_household":
 { Args: Record<PropertyKey, never>; Returns: string
+                           },
+"record_house_night":
+{ Args: { "d": string,"house": string,"new_state": Json,"night_events": Json,"night_players": Json }; Returns: undefined
                            },
 "record_night":
 { Args: { "d": string,"day_events": Json,"new_state": Json,"p": string }; Returns: undefined
