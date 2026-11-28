@@ -5,7 +5,7 @@ import { playerSprite, runs, type Pixels } from "./game/sprite.ts";
 import { useTheme } from "./ui.tsx";
 
 /** A pixel drawing, each row merged into runs of one color. `bob` makes it breathe in place. */
-export function PixelSprite({ pixels, scale = 4, bob = true, delay = 0 }: { pixels: Pixels; scale?: number; bob?: boolean; delay?: number }) {
+export function PixelSprite({ pixels, scale = 4, bob = true, delay = 0, shadow = true }: { pixels: Pixels; scale?: number; bob?: boolean; delay?: number; shadow?: boolean }) {
   const rows = useMemo(() => pixels.map(runs), [pixels]);
   const lift = useRef(new Animated.Value(0)).current;
   useEffect(() => {
@@ -32,7 +32,7 @@ export function PixelSprite({ pixels, scale = 4, bob = true, delay = 0 }: { pixe
           </View>
         ))}
       </Animated.View>
-      <View style={{ width: width * 0.55, height: scale * 1.2, borderRadius: scale, backgroundColor: "#000", opacity: 0.35, marginTop: -scale * 0.6 }} />
+      {shadow ? <View style={{ width: width * 0.55, height: scale * 1.2, borderRadius: scale, backgroundColor: "#000", opacity: 0.35, marginTop: -scale * 0.6 }} /> : null}
     </View>
   );
 }

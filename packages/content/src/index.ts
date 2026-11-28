@@ -6,3 +6,4 @@ export * from "./house.ts";
 export * from "./expeditions.ts";
 export * from "./visitors.ts";
 export * from "./sprites.ts";
+export * from "./innArt.ts";

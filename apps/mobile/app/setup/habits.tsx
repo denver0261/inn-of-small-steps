@@ -42,7 +42,7 @@ export default function StarterHabits() {
           run(async () => {
             for (const s of STARTER_HABITS.filter((x) => picked.includes(x.id))) await addStarterHabit(s, today);
             changed();
-            router.replace("/today");
+            router.replace("/inn");
           })
         }
       />

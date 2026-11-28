@@ -21,11 +21,11 @@ export default function TabsLayout() {
         tabBarLabelStyle: { fontFamily: fonts.serifBold, fontSize: 11 },
       }}
     >
+      <Tabs.Screen name="inn" options={{ title: "Inn", tabBarIcon: icon("⌂") }} />
       <Tabs.Screen name="today" options={{ title: "Today", tabBarIcon: icon("☀︎") }} />
       <Tabs.Screen name="system" options={{ title: "System", tabBarIcon: icon("◈") }} />
       <Tabs.Screen name="habits" options={{ title: "Habits", tabBarIcon: icon("✦") }} />
       <Tabs.Screen name="chores" options={{ title: "Chores", tabBarIcon: icon("✓") }} />
-      <Tabs.Screen name="house" options={{ title: "House", tabBarIcon: icon("⌂") }} />
     </Tabs>
   );
 }

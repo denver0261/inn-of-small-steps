@@ -1,14 +1,14 @@
 import { router } from "expo-router";
 import { useState } from "react";
-import { Share } from "react-native";
+import { Share, View } from "react-native";
 import { CLASS_PATHS, ITEMS, RECIPES, RECRUITS, UPGRADES, VISITORS } from "@inn/content";
 import { canAfford, daysBetween, DEFAULT_TUNING, ladderReady, masteryRank, nextUpgrade } from "@inn/engine";
 import type { Resources } from "@inn/schema";
-import { addOrder, addRoom, cancelOrder, createInvite, getHouse, isDayClosed, listChores, listHabits, listHousemates, listLogs, listOrders, listRooms, signOut, updatePlayer } from "../../src/data/api.ts";
-import { activityFrom, describeReward, innScene, questView } from "../../src/game/visitors.ts";
-import { sceneLines } from "../../src/game/house.ts";
-import { useAction, useData, useSession } from "../../src/session.tsx";
-import { Body, Button, Card, Choice, ErrorText, Field, Heading, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
+import { addOrder, addRoom, cancelOrder, createInvite, getHouse, isDayClosed, listChores, listHabits, listHousemates, listLogs, listOrders, listRooms, signOut, updatePlayer } from "../src/data/api.ts";
+import { activityFrom, describeReward, innScene, questView } from "../src/game/visitors.ts";
+import { sceneLines } from "../src/game/house.ts";
+import { useAction, useData, useSession } from "../src/session.tsx";
+import { Body, Button, Card, Choice, ErrorText, Field, Heading, Row, Screen, SystemBox, Title, useTheme } from "../src/ui.tsx";
 
 function orderLabel(kind: string, ref: string): string {
   if (kind === "build") return `Build ${UPGRADES.find((u) => u.id === ref)?.name}`;
@@ -55,6 +55,9 @@ export default function House() {
 
   return (
     <Screen>
+      <View style={{ alignSelf: "flex-start", marginBottom: 8 }}>
+        <Button small kind="plain" label="‹ The Inn" onPress={() => (router.canGoBack() ? router.back() : router.replace("/inn"))} />
+      </View>
       <Title sub="Your house in Liscor, shared by both of you.">{household.name}</Title>
       <ErrorText error={error ?? action.error} />
 

@@ -39,6 +39,8 @@ During the day you only log. At night the System turns logs into levels. In the 
 
 **Characters.** Each player is a small pixel character in their class's outfit, standing with their housemate in the common room on Today and alone on the System tab. The art is original and drawn as text in `packages/content` (a base body plus an outfit layer), so gear can later add armor and weapons as more layers.
 
+**The Inn is home.** The app opens on the Inn: your house at night in the same pixel style, built up as you build it (a chimney and a lit kitchen, a training dummy, the supply shed, the garden, the guest room's lamps and the blue door to the Wandering Inn). The two of you stand out front, and anyone waiting with an offer stands by the door. Below it: the house's resources, today's work, visitors, an outing and the next upgrade, with the full house page one tap away.
+
 ## Day one
 
 Setup takes about 10 minutes each, and the game is playable that same evening.
