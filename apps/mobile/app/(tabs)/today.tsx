@@ -24,6 +24,7 @@ import { graceLeft, graceSkill, skillView } from "../../src/game/character.ts";
 import { staminaLeft } from "../../src/game/house.ts";
 import { useHealth } from "../../src/health/useHealth.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
+import { Party } from "../../src/sprite.tsx";
 import { Body, Button, Card, ErrorText, Heading, Prose, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
 
 export default function Today() {
@@ -78,6 +79,7 @@ export default function Today() {
     <Screen>
       <Title sub={`${path?.name ?? ""} · ${today} · logs stay open until you sleep`}>Today</Title>
       <ErrorText error={error ?? action.error} />
+      {data ? <Party players={data.people} me={player.id} /> : null}
       {morning ? (
         <View style={{ marginBottom: 8 }}>
           {myLines.length > 0 ? <SystemBox lines={myLines} /> : null}

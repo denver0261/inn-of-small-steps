@@ -4,6 +4,7 @@ import { DEFAULT_TUNING } from "@inn/engine";
 import { getChoices, getMyState, getNames, isDayClosed, listHousemates, listMornings, saveChoices } from "../../src/data/api.ts";
 import { displayClass, levelProgress, roman, skillView } from "../../src/game/character.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
+import { Character, Stage } from "../../src/sprite.tsx";
 import { Body, Button, Card, ErrorText, Heading, ProgressBar, Prose, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
 
 /** The character sheet and the System's record: class, level, Skills, Level 10 choices, past mornings. */
@@ -33,6 +34,9 @@ export default function System() {
     <Screen>
       <Title sub={state ? (state.progress.level > 0 ? `${player.display_name} · Level ${state.progress.level}` : `${player.display_name} · your class comes on the first night`) : player.display_name}>{cls}</Title>
       <ErrorText error={error ?? action.error} />
+      <Stage>
+        <Character player={player} scale={6} you />
+      </Stage>
       {progress && state && state.progress.level > 0 ? (
         <ProgressBar value={progress.share} label={`${progress.into} of ${progress.need} XP toward Level ${state.progress.level + 1}. Levels come while you sleep.`} />
       ) : null}
