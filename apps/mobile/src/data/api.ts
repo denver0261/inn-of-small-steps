@@ -1,6 +1,6 @@
 import type { StarterHabit } from "@inn/content";
 import { migrateHouse, migrateState, NEW_HOUSE, NEW_PLAYER_STATE, type HouseState, type PlayerState } from "@inn/engine";
-import type { Chore, Goal, HabitLog, LocalDate } from "@inn/schema";
+import type { Chore, Goal, HabitLog, HealthWorkout, LocalDate } from "@inn/schema";
 import { supabase } from "../lib/supabase.ts";
 import {
   choreFromRow,
@@ -263,4 +263,37 @@ export async function startOuting(date: LocalDate, index: number): Promise<void>
 
 export async function saveOutingChoices(playerId: string, date: LocalDate, index: number, choices: number[]): Promise<void> {
   ok(await supabase.from("outings").update({ choices }).eq("player_id", playerId).eq("date", date).eq("index", index));
+}
+
+// Apple Health import: the open days' apple_health logs are replaced to match Apple Health.
+
+export async function getLastClosed(): Promise<LocalDate | undefined> {
+  const rows = ok(await supabase.from("day_closes").select("date").order("date", { ascending: false }).limit(1));
+  return rows[0]?.date;
+}
+
+/** My Apple Health logs from `from` on. */
+export async function listMyHealthLogs(playerId: string, from: LocalDate) {
+  return ok(await supabase.from("habit_logs").select("*").eq("player_id", playerId).eq("source", "apple_health").gte("date", from)).map(logFromRow);
+}
+
+/** Keeps the workouts behind my logs (private to me: type, times, duration, distance). */
+export async function saveWorkouts(workouts: readonly HealthWorkout[]): Promise<void> {
+  if (workouts.length === 0) return;
+  ok(
+    await supabase.from("health_workouts").upsert(
+      workouts.map((w) => ({ id: w.id, type: w.type, start_at: w.start, end_at: w.end, duration_min: w.durationMin, distance_km: w.distanceKm ?? null, from_garmin: w.fromGarmin })),
+      { onConflict: "player_id,id" },
+    ),
+  );
+}
+
+export async function removeLogs(ids: readonly string[]): Promise<void> {
+  if (ids.length === 0) return;
+  ok(await supabase.from("habit_logs").delete().in("id", ids));
+}
+
+export async function addLogs(logs: readonly HabitLog[]): Promise<void> {
+  if (logs.length === 0) return;
+  ok(await supabase.from("habit_logs").insert(logs.map(logToInsert)));
 }

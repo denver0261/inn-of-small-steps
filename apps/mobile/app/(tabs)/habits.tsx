@@ -117,7 +117,7 @@ function NewHabit({ today, onDone, onCancel }: { today: string; onDone: () => vo
   const [domain, setDomain] = useState<Domain>("home");
   const [tier, setTier] = useState<Tier>("normal");
   const [tiny, setTiny] = useState("");
-  const [health, setHealth] = useState<"none" | "cycling" | "strength">("none");
+  const [health, setHealth] = useState<"none" | "cycling" | "strength" | "sleep">("none");
   const [goal, setGoal] = useState<Omit<Goal, "habitId" | "startDate">>({ period: "day", target: 1, prescribed: false });
   const { busy, error, run } = useAction();
   return (
@@ -135,6 +135,7 @@ function NewHabit({ today, onDone, onCancel }: { today: string; onDone: () => vo
           { value: "none", label: "Tapping it" },
           { value: "cycling", label: "Apple Health rides" },
           { value: "strength", label: "Apple Health lifts" },
+          { value: "sleep", label: "Apple Health sleep" },
         ]}
         value={health}
         onChange={setHealth}

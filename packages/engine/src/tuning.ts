@@ -52,6 +52,12 @@ export interface Tuning {
   };
   /** FLAGGED: crafting mastery. A fine result adds one to the output. */
   crafting: { skilledAt: number; masterAt: number; fineChance: { novice: number; skilled: number; master: number } };
+  /**
+   * FLAGGED (decision 0017): sleep from Apple Health. 7+ hours is a normal log; anything
+   * from `minMinutes` up is tiny. The design leaves 6-7 hours open; it counts as tiny.
+   * `lookbackDays`: how far before the first open day a sync looks for late records.
+   */
+  sleep: { normalFromMinutes: number; minMinutes: number; lookbackDays: number };
   /** Active habits a player may have: `initial` at first, `later` once `afterDays` have passed. FLAGGED: `later`. */
   habitSlots: { initial: number; afterDays: number; later: number };
 }
@@ -68,6 +74,7 @@ export const DEFAULT_TUNING: Tuning = {
   workoutBigFromMin: { cycling: 30, strength: 45 },
   habitSlots: { initial: 5, afterDays: 14, later: 8 },
   skillXpCap: 0.5,
+  sleep: { normalFromMinutes: 420, minMinutes: 60, lookbackDays: 7 },
   economy: {
     perTier: {
       coins: { tiny: 1, normal: 3, big: 6 },
