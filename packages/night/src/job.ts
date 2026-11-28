@@ -194,13 +194,19 @@ async function allProcessed(db: NightDb, members: readonly PlayerRow[], date: Lo
   return true;
 }
 
+/** "a mounted rock crab claw"; names that already start with an article keep it. */
+function withArticle(name: string): string {
+  const lower = name.charAt(0).toLowerCase() + name.slice(1);
+  return /^(a|an|the) /i.test(name) ? lower : `${/^[aeiou]/i.test(name) ? "an" : "a"} ${lower}`;
+}
+
 /** Plain sentences about the house's night, for the morning. */
 export function houseNews(events: readonly HouseEvent[], names: Readonly<Record<string, string>>): string[] {
   const out: string[] = [];
   for (const e of events) {
     if (e.type === "built") out.push(`${upgradeDef(e.upgradeId).name} is finished overnight.`);
     if (e.type === "crafted") out.push(`${itemDef(e.itemId).name} is ready${e.fine ? ", and it came out especially well" : ""}.`);
-    if (e.type === "outing" && e.result.rare) out.push(`${names[e.playerId] ?? "Someone"} came home from an outing with ${itemDef(e.result.rare).name.toLowerCase()}.`);
+    if (e.type === "outing" && e.result.rare) out.push(`${names[e.playerId] ?? "Someone"} came home from an outing with ${withArticle(itemDef(e.result.rare).name)}.`);
   }
   return out;
 }

@@ -1,5 +1,5 @@
 import type { StarterHabit } from "@inn/content";
-import { migrateState, NEW_PLAYER_STATE, type PlayerState } from "@inn/engine";
+import { migrateHouse, migrateState, NEW_HOUSE, NEW_PLAYER_STATE, type HouseState, type PlayerState } from "@inn/engine";
 import type { Chore, Goal, HabitLog, LocalDate } from "@inn/schema";
 import { supabase } from "../lib/supabase.ts";
 import {
@@ -230,4 +230,37 @@ export async function getChoices(date: LocalDate): Promise<Choices | null> {
 /** Saves today's choices; they apply when the day closes. */
 export async function saveChoices(date: LocalDate, choices: Partial<Choices>): Promise<void> {
   ok(await supabase.from("night_choices").upsert({ date, ...choices }, { onConflict: "player_id,date" }));
+}
+
+// The house (M3): its state, the day's orders and outings. Everything settles at night.
+
+export async function getHouse(): Promise<HouseState> {
+  const row = maybe(await supabase.from("house_states").select("state").maybeSingle());
+  return row ? migrateHouse(row.state) : NEW_HOUSE;
+}
+
+export type Order = Pick<Row<"house_orders">, "id" | "player_id" | "kind" | "ref">;
+
+export async function listOrders(date: LocalDate): Promise<Order[]> {
+  return ok(await supabase.from("house_orders").select("id, player_id, kind, ref").eq("date", date).order("created_at"));
+}
+
+export async function addOrder(date: LocalDate, kind: "build" | "craft" | "meal", ref: string): Promise<void> {
+  ok(await supabase.from("house_orders").insert({ date, kind, ref }));
+}
+
+export async function cancelOrder(id: string): Promise<void> {
+  ok(await supabase.from("house_orders").delete().eq("id", id));
+}
+
+export async function listMyOutings(playerId: string, date: LocalDate): Promise<{ index: number; choices: number[] }[]> {
+  return ok(await supabase.from("outings").select("index, choices").eq("player_id", playerId).eq("date", date).order("index"));
+}
+
+export async function startOuting(date: LocalDate, index: number): Promise<void> {
+  ok(await supabase.from("outings").insert({ date, index }));
+}
+
+export async function saveOutingChoices(playerId: string, date: LocalDate, index: number, choices: number[]): Promise<void> {
+  ok(await supabase.from("outings").update({ choices }).eq("player_id", playerId).eq("date", date).eq("index", index));
 }

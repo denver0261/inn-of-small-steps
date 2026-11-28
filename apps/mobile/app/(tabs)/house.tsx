@@ -1,29 +1,125 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Share } from "react-native";
-import { CLASS_PATHS } from "@inn/content";
-import { daysBetween } from "@inn/engine";
-import { addRoom, createInvite, listHousemates, listRooms, signOut, updatePlayer } from "../../src/data/api.ts";
+import { CLASS_PATHS, ITEMS, RECIPES, UPGRADES } from "@inn/content";
+import { canAfford, daysBetween, DEFAULT_TUNING, ladderReady, masteryRank, nextUpgrade } from "@inn/engine";
+import type { Resources } from "@inn/schema";
+import { addOrder, addRoom, cancelOrder, createInvite, getHouse, isDayClosed, listChores, listHousemates, listOrders, listRooms, signOut, updatePlayer } from "../../src/data/api.ts";
+import { sceneLines } from "../../src/game/house.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
-import { Body, Button, Card, Choice, ErrorText, Field, Heading, Screen, Title } from "../../src/ui.tsx";
+import { Body, Button, Card, Choice, ErrorText, Field, Heading, Row, Screen, Title, useTheme } from "../../src/ui.tsx";
+
+const cost = (c: Resources) =>
+  Object.entries(c)
+    .filter(([, n]) => (n ?? 0) > 0)
+    .map(([r, n]) => `${n} ${r}`)
+    .join(", ") || "free";
 
 /** Free path switching lasts this many days (docs/design.md, "Day one"). */
 const PATH_SWITCH_DAYS = 7;
 
 export default function House() {
   const { player, household, today, changed, refresh } = useSession();
-  const { data, error } = useData(async () => ({ people: await listHousemates(), rooms: await listRooms() }));
+  const t = useTheme();
+  const { data, error } = useData(async () => {
+    const [people, rooms, house, orders, chores, asleep] = await Promise.all([listHousemates(), listRooms(), getHouse(), listOrders(today), listChores(), isDayClosed(today)]);
+    return { people, rooms, house, orders, chores, asleep };
+  }, [today]);
   const [room, setRoom] = useState("");
   const [invite, setInvite] = useState<string | null>(null);
   const action = useAction();
   if (!player || !household) return null;
   const canSwitchPath = daysBetween(player.started_on, today) < PATH_SWITCH_DAYS;
   const rooms = data?.rooms ?? [];
+  const house = data?.house;
+  const orders = data?.orders ?? [];
+  const order = (kind: "build" | "craft" | "meal", ref: string) => action.run(async () => (await addOrder(today, kind, ref), changed()));
+  const cancel = (id: string) => action.run(async () => (await cancelOrder(id), changed()));
+  const who = (id: string) => (id === player.id ? "you" : (data?.people.find((p) => p.id === id)?.display_name ?? "?"));
+  const next = house ? nextUpgrade(house, UPGRADES) : undefined;
+  const kitchen = house?.upgrades.includes("kitchen") ?? false;
+  const stash = Object.entries(house?.stash ?? {}).filter(([, n]) => n > 0);
+  const locked = data?.asleep === true;
 
   return (
     <Screen>
       <Title sub="Your house in Liscor, shared by both of you.">{household.name}</Title>
       <ErrorText error={error ?? action.error} />
+
+      {house ? (
+        <>
+          {sceneLines(house, rooms, data?.chores ?? [], today).map((line, i) => (
+            <Body key={i} style={{ marginBottom: 6 }}>{line}</Body>
+          ))}
+          <Body muted style={{ marginTop: 6 }}>
+            {house.resources.coins} coins · {house.resources.supplies} supplies · {house.resources.mana} mana · {house.resources.goodwill} goodwill
+          </Body>
+          <Body muted style={{ fontSize: 13 }}>As of this morning. Orders below are settled tonight, in order, if the house can afford them.</Body>
+
+          {orders.length > 0 ? <Heading>Tonight</Heading> : null}
+          {orders.map((o) => (
+            <Row key={o.id}>
+              <Body style={{ flex: 1 }}>
+                {o.kind === "build" ? `Build ${UPGRADES.find((u) => u.id === o.ref)?.name}` : o.kind === "craft" ? `Cook ${RECIPES.find((r) => r.id === o.ref)?.name}` : `Eat ${ITEMS.find((i) => i.id === o.ref)?.name}`} · {who(o.player_id)}
+              </Body>
+              {o.player_id === player.id && !locked ? <Button small kind="plain" label="Cancel" onPress={() => cancel(o.id)} /> : null}
+            </Row>
+          ))}
+
+          <Heading>Upgrades</Heading>
+          {UPGRADES.slice(1).map((u) => {
+            const built = house.upgrades.includes(u.id);
+            const ordered = orders.some((o) => o.kind === "build" && o.ref === u.id);
+            const isNext = (next?.id === u.id || u.needsSkillTheme !== undefined) && !built && ladderReady(u, house.upgrades, UPGRADES);
+            return (
+              <Card key={u.id}>
+                <Body style={{ fontWeight: "700", color: built ? t.good : t.text }}>
+                  {built ? "✓ " : ""}
+                  {u.name}
+                </Body>
+                <Body muted>{u.description}</Body>
+                {!built ? <Body muted>Costs {cost(u.cost)}</Body> : null}
+                {!built && isNext && !ordered && !locked ? (
+                  <Button small kind={canAfford(house.resources, u.cost) ? "primary" : "plain"} label={canAfford(house.resources, u.cost) ? "Build tonight" : "Try tonight"} busy={action.busy} onPress={() => order("build", u.id)} />
+                ) : null}
+                {ordered ? <Body muted>Ordered for tonight.</Body> : null}
+              </Card>
+            );
+          })}
+
+          <Heading>{kitchen ? "Kitchen" : "Cookfire"}</Heading>
+          {RECIPES.filter((r) => r.station === "cookfire" || kitchen).map((r) => (
+            <Card key={r.id}>
+              <Row>
+                <Body style={{ fontWeight: "700", flex: 1 }}>{r.name}</Body>
+                <Body muted>{masteryRank(house.mastery[r.id] ?? 0, DEFAULT_TUNING)}</Body>
+              </Row>
+              <Body muted>{r.description}</Body>
+              <Row>
+                <Body muted style={{ flex: 1 }}>{cost(r.cost)}</Body>
+                {!locked ? <Button small kind="plain" label="Cook tonight" busy={action.busy} onPress={() => order("craft", r.id)} /> : null}
+              </Row>
+            </Card>
+          ))}
+          {!kitchen ? <Body muted>Build the kitchen for more recipes.</Body> : null}
+
+          <Heading>Stash</Heading>
+          {stash.length === 0 ? <Body muted>Empty for now. Outings and cooking fill it.</Body> : null}
+          {stash.map(([id, n]) => {
+            const def = ITEMS.find((i) => i.id === id);
+            const eating = orders.filter((o) => o.kind === "meal" && o.ref === id).length;
+            return (
+              <Row key={id}>
+                <Body style={{ flex: 1 }}>
+                  {def?.name ?? id} ×{n}
+                  {def?.stamina ? ` · +${def.stamina} stamina` : ""}
+                </Body>
+                {def?.stamina && n > eating && !locked ? <Button small kind="plain" label="Eat tonight" busy={action.busy} onPress={() => order("meal", id)} /> : null}
+              </Row>
+            );
+          })}
+        </>
+      ) : null}
 
       <Heading>Who lives here</Heading>
       {data?.people.map((p) => (
@@ -32,7 +128,7 @@ export default function House() {
           {p.id === player.id ? " (you)" : ""} · {CLASS_PATHS.find((c) => c.id === p.class_path_id)?.name ?? "no path yet"}
         </Body>
       ))}
-      {invite ? (
+      {(data?.people.length ?? 0) >= 2 && !invite ? null : invite ? (
         <Card>
           <Body>Invite code (one use, good for 7 days):</Body>
           <Body style={{ fontWeight: "700", fontSize: 18, marginVertical: 6 }} >{invite}</Body>

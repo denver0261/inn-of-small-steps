@@ -1,3 +1,4 @@
+import { router } from "expo-router";
 import { Alert, View } from "react-native";
 import { CLASS_PATHS } from "@inn/content";
 import { addDays, DEFAULT_TUNING, type PlayerState } from "@inn/engine";
@@ -13,12 +14,14 @@ import {
   listHousemates,
   listLogs,
   listMornings,
+  listMyOutings,
   listMyPauses,
   removeLog,
   saveChoices,
 } from "../../src/data/api.ts";
 import { buildBoard, describeGoal, logWindowStart, percent, type HabitCard } from "../../src/game/board.ts";
 import { graceLeft, graceSkill, skillView } from "../../src/game/character.ts";
+import { staminaLeft } from "../../src/game/house.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
 import { Body, Button, Card, ErrorText, Heading, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
 
@@ -27,7 +30,7 @@ export default function Today() {
   const from = logWindowStart(today, DEFAULT_TUNING);
   const { data, error } = useData(
     async () => {
-      const [habits, goals, pauses, logs, people, state, mornings, asleep, choices, names] = await Promise.all([
+      const [habits, goals, pauses, logs, people, state, mornings, asleep, choices, names, outings] = await Promise.all([
         listHabits(),
         listGoals(),
         listMyPauses(),
@@ -38,8 +41,9 @@ export default function Today() {
         isDayClosed(today),
         getChoices(today),
         player ? getNames(player.id) : Promise.resolve({ skills: {}, evolutions: {} }),
+        player ? listMyOutings(player.id, today) : Promise.resolve([]),
       ]);
-      return { habits, goals, pauses, logs, people, state, morning: mornings[0], asleep, choices, names };
+      return { habits, goals, pauses, logs, people, state, morning: mornings[0], asleep, choices, names, outings };
     },
     [from, today],
   );
@@ -96,6 +100,14 @@ export default function Today() {
           onGrace={() => markGrace(card.habit.id)}
         />
       ))}
+      {data && !data.asleep && data.state.progress.level > 0 ? (
+        <Card onPress={() => router.push("/outing")}>
+          <Body style={{ fontWeight: "700" }}>Around Liscor</Body>
+          <Body muted>
+            Stamina {staminaLeft(data.state, data.outings.length, DEFAULT_TUNING)}. {data.outings.some((o) => o.choices.length < DEFAULT_TUNING.expedition.events) ? "An outing is waiting for you." : "Errands, foraging, the odd rock crab. Tap to set out."}
+          </Body>
+        </Card>
+      ) : null}
       {partners.map((p) => {
         const theirHabits = data?.habits.filter((h) => h.playerId === p.id) ?? [];
         const done = theirHabits.filter((h) => data?.logs.some((l) => l.habitId === h.id && l.date === today));
