@@ -137,7 +137,7 @@ function NewChore({
       {repeat === "weekly" ? (
         <Choice
           options={WEEKDAYS.map((d, i) => ({ value: i, label: d }))}
-          value={undefined}
+          selected={weekdays}
           onChange={(d) => setWeekdays((w) => (w.includes(d) ? w.filter((x) => x !== d) : [...w, d].sort()))}
         />
       ) : null}

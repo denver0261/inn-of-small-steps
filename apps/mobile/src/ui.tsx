@@ -123,21 +123,23 @@ export function Field({ label, ...input }: TextInputProps & { label: string }) {
   );
 }
 
-/** A row of choices; one selected. */
+/** A row of choices: one selected by `value`, or several by `selected`. */
 export function Choice<T extends string | number>({
   options,
   value,
+  selected,
   onChange,
 }: {
   options: readonly { value: T; label: string }[];
-  value: T | undefined;
+  value?: T | undefined;
+  selected?: readonly T[];
   onChange: (v: T) => void;
 }) {
   const t = useTheme();
   return (
     <View style={styles.chips}>
       {options.map((o) => {
-        const on = o.value === value;
+        const on = o.value === value || (selected?.includes(o.value) ?? false);
         return (
           <Pressable
             key={String(o.value)}

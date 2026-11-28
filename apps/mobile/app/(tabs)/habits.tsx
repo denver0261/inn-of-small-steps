@@ -51,7 +51,7 @@ function GoalFields({ goal, onChange }: { goal: Omit<Goal, "habitId" | "startDat
       ) : (
         <Choice
           options={[{ value: -1, label: "Every day" }, ...WEEKDAYS.map((d, i) => ({ value: i, label: d }))]}
-          value={goal.days === undefined ? -1 : undefined}
+          selected={goal.days ?? [-1]}
           onChange={(d) => {
             if (d === -1) {
               const { days: _, ...rest } = goal;

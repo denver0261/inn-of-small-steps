@@ -54,7 +54,7 @@ export default function Today() {
 
 function HabitRow({ card, busy, onLog, onUndo }: { card: HabitCard; busy: boolean; onLog: (k: "full" | "tiny") => void; onUndo: (id: string) => void }) {
   const t = useTheme();
-  const { habit, goal, week, rate, todaysLogs, paused, scheduledToday } = card;
+  const { habit, goal, week, rate, todaysLogs, paused, scheduledToday, doneForToday } = card;
   const status = paused ? "paused" : !scheduledToday ? "rest day" : week ? `${week.done} of ${week.target} this week, ${week.daysLeft} days left` : todaysLogs.length ? "done today" : "not yet today";
   return (
     <Card>
@@ -74,7 +74,7 @@ function HabitRow({ card, busy, onLog, onUndo }: { card: HabitCard; busy: boolea
           {l.source === "tap" && !l.choreId ? <Button small kind="plain" label="Undo" onPress={() => onUndo(l.id)} /> : null}
         </Row>
       ))}
-      {paused ? null : habit.allowTap ? (
+      {paused || doneForToday ? null : habit.allowTap ? (
         <Row>
           <Button small label="Done" busy={busy} onPress={() => onLog("full")} />
           <Button small kind="plain" label={`Tiny: ${habit.tinyVersion}`} busy={busy} onPress={() => onLog("tiny")} />

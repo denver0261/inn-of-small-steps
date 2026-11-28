@@ -36,6 +36,16 @@ describe("the Today board", () => {
     expect(pt?.week).toEqual({ done: 2, target: 3, daysLeft: 4, met: false });
   });
 
+  it("marks a day goal done for today once its target is reached", () => {
+    const goals: Goal[] = [daily("tidy"), daily("water", { target: 2 }), { habitId: "pt", period: "week", target: 1, startDate: MON, prescribed: false }];
+    const logs = [log("tidy", MON), log("water", MON), log("pt", MON)];
+    const [tidy, water, pt, eat] = buildBoard(MON, [habit("tidy"), habit("water"), habit("pt"), habit("eat")], [...goals, daily("eat")], [], logs, T);
+    expect(tidy?.doneForToday).toBe(true);
+    expect(water?.doneForToday).toBe(false);
+    expect(pt?.doneForToday).toBe(false);
+    expect(eat?.doneForToday).toBe(false);
+  });
+
   it("marks rest days and paused days", () => {
     const weekdays = daily("tidy", { days: [0, 1, 2, 3, 4] });
     const [sat] = buildBoard("2024-01-06", [habit("tidy")], [weekdays], [], [], T);

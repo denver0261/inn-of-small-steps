@@ -24,6 +24,8 @@ export interface HabitCard {
   week?: WeekProgress;
   /** Day goals: whether today is a scheduled day (rest days count as done). */
   scheduledToday: boolean;
+  /** Day goals: today's sessions reach the target, so there is nothing left to tap. */
+  doneForToday: boolean;
   paused: boolean;
 }
 
@@ -52,6 +54,7 @@ export function buildBoard(
       habit,
       todaysLogs: logs.filter((l) => l.habitId === habit.id && l.date === today),
       scheduledToday: goal === undefined ? false : goal.period === "week" || isScheduledDay(goal, today),
+      doneForToday: goal?.period === "day" && sessionsOn(today, habit.id) >= goal.target,
       paused: isPaused(pauses, habit.id, today),
     };
     if (goal) card.goal = goal;

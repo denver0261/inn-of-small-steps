@@ -5,7 +5,7 @@ import { CLASS_PATHS } from "@inn/content";
 import { daysBetween } from "@inn/engine";
 import { addRoom, createInvite, listHousemates, listRooms, signOut, updatePlayer } from "../../src/data/api.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
-import { Body, Button, Card, Choice, ErrorText, Field, Heading, Row, Screen, Title } from "../../src/ui.tsx";
+import { Body, Button, Card, Choice, ErrorText, Field, Heading, Screen, Title } from "../../src/ui.tsx";
 
 /** Free path switching lasts this many days (docs/design.md, "Day one"). */
 const PATH_SWITCH_DAYS = 7;
@@ -47,9 +47,7 @@ export default function House() {
       {rooms.map((r) => (
         <Body key={r.id}>· {r.name}</Body>
       ))}
-      <Row>
-        <Field label="New room" value={room} onChangeText={setRoom} maxLength={40} />
-      </Row>
+      <Field label="New room" value={room} onChangeText={setRoom} maxLength={40} />
       <Button
         small
         label="Add room"
