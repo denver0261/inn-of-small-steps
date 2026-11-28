@@ -23,6 +23,9 @@ import { narrate, playerNight, type Narrate, type PlayerNight } from "@inn/narra
 import type { LocalDate } from "@inn/schema";
 import type { NightDb, PlayerRow, StoryRecord } from "./db.ts";
 
+/** How far back the job looks for unclosed days. */
+const GAP_LOOKBACK_DAYS = 60;
+
 export interface RunOptions {
   db: NightDb;
   /** The current instant; the job never reads the clock itself. */
@@ -55,8 +58,11 @@ export async function runNight({ db, now, call, promptVersion, tuning = DEFAULT_
   for (const p of players) {
     try {
       const today = gameDateAt(now, p.timeZone);
-      const last = await db.lastClosed(p.id);
-      const dates = dateRange(last ? addDays(last, 1) : p.startedOn, addDays(today, -1));
+      // Every past day must be closed, including gaps before a day the player closed early
+      // with "Go to sleep": otherwise those days would stay open and never be counted.
+      const from = p.startedOn > addDays(today, -GAP_LOOKBACK_DAYS) ? p.startedOn : addDays(today, -GAP_LOOKBACK_DAYS);
+      const closed = new Set(await db.closedDates(p.id, from));
+      const dates = dateRange(from, addDays(today, -1)).filter((d) => !closed.has(d));
       if (dates.length > 0) {
         await db.autoClose(p.id, dates);
         report.autoClosed.push({ playerId: p.id, dates });

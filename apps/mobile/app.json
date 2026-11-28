@@ -10,7 +10,19 @@
       "bundleIdentifier": "dev.innofsmallsteps.app",
       "supportsTablet": false
     },
-    "plugins": ["expo-router"],
-    "experiments": { "typedRoutes": false }
+    "plugins": [
+      "expo-router",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "Inn of Small Steps reads your rides, lifts and sleep so they count in the game. It reads nothing else.",
+          "NSHealthUpdateUsageDescription": "Development builds can save a test ride to try the import.",
+          "background": false
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": false
+    }
   }
 }

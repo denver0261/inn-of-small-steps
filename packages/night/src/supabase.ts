@@ -28,6 +28,9 @@ export function supabaseNightDb(db: Client): NightDb {
     async householdName(id) {
       return ok(await db.from("households").select("name").eq("id", id).single()).name;
     },
+    async closedDates(playerId, from) {
+      return ok(await db.from("day_closes").select("date").eq("player_id", playerId).gte("date", from)).map((r) => r.date);
+    },
     async lastClosed(playerId) {
       const row = ok(await db.from("day_closes").select("date").eq("player_id", playerId).order("date", { ascending: false }).limit(1));
       return row[0]?.date;

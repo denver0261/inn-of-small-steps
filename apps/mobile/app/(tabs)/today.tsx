@@ -22,6 +22,7 @@ import {
 import { buildBoard, describeGoal, logWindowStart, percent, type HabitCard } from "../../src/game/board.ts";
 import { graceLeft, graceSkill, skillView } from "../../src/game/character.ts";
 import { staminaLeft } from "../../src/game/house.ts";
+import { useHealth } from "../../src/health/useHealth.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
 import { Body, Button, Card, ErrorText, Heading, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
 
@@ -48,6 +49,7 @@ export default function Today() {
     [from, today],
   );
   const action = useAction();
+  const health = useHealth(player?.id, player?.time_zone, data?.habits, today, changed);
   if (!player) return null;
 
   const mine = data ? buildBoard(today, data.habits.filter((h) => h.playerId === player.id), data.goals, data.pauses, data.logs.filter((l) => l.playerId === player.id), DEFAULT_TUNING) : [];
@@ -65,7 +67,8 @@ export default function Today() {
   const sleep = () =>
     Alert.alert("Go to sleep?", "Today closes now. Your logs lock, and the System speaks once your housemate sleeps too (or at 4 a.m.).", [
       { text: "Not yet", style: "cancel" },
-      { text: "Sleep", onPress: () => void action.run(async () => (await goToSleep(), changed())) },
+      // Pull in tonight's late workout before the day locks.
+      { text: "Sleep", onPress: () => void action.run(async () => (await health.sync(), await goToSleep(), changed())) },
     ]);
   // Show the morning on Today until the next night closes: it's dated yesterday (or today, after an early sleep).
   const morning = data?.morning && data.morning.date >= addDays(today, -1) ? data.morning : undefined;
@@ -81,6 +84,14 @@ export default function Today() {
           <Body>{morning.scene}</Body>
         </View>
       ) : null}
+      {health.wanted && health.available && health.needsPermission && !data?.asleep ? (
+        <Card onPress={() => void health.connect()}>
+          <Body style={{ fontWeight: "700" }}>Connect Apple Health</Body>
+          <Body muted>Rides, lifts and sleep come in from Apple Health (turn on Garmin Connect's Apple Health sync). Only the workout type, times, duration, distance and hours asleep are read.</Body>
+        </Card>
+      ) : null}
+      {health.wanted && !health.available ? <Body muted>Apple Health isn't available on this device, so rides and lifts can't come in.</Body> : null}
+      {health.error ? <ErrorText error={`Apple Health: ${health.error}`} /> : null}
       {data?.asleep ? (
         <Card>
           <Body style={{ fontWeight: "700" }}>You're asleep.</Body>
@@ -121,6 +132,9 @@ export default function Today() {
       {data && !data.asleep ? (
         <View style={{ marginTop: 24 }}>
           <Button kind="plain" label="Go to sleep" busy={action.busy} onPress={sleep} />
+          {health.addTestRide && health.wanted && !health.needsPermission ? (
+            <Button small kind="plain" label="Dev: add a 40-minute ride to Apple Health" busy={health.syncing} onPress={() => void health.addTestRide?.(40)} />
+          ) : null}
           <Body muted style={{ marginTop: 6, fontSize: 13 }}>Closes today early. Otherwise it closes by itself at 4 a.m.</Body>
         </View>
       ) : null}

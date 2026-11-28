@@ -132,6 +132,17 @@ describe("the nightly job", () => {
     expect((db.states.get("kyle") as { stamina: number }).stamina).toBe(20 - 10 + 5);
   });
 
+  it("closes the days before an early sleep, even if the job never ran for them", async () => {
+    const db = house();
+    // Both slept on the 7th before any run: the 4th to the 6th were never closed.
+    db.sleep("kyle", "2027-01-07");
+    db.sleep("sam", "2027-01-07");
+    const r = await run(db, "2027-01-08T02:00:00Z"); // still the 7th in Chicago
+    expect(r.autoClosed[0]?.dates).toEqual(["2027-01-04", "2027-01-05", "2027-01-06"]);
+    expect(r.processed.filter((p) => p.playerId === "kyle").map((p) => p.date)).toEqual(["2027-01-04", "2027-01-05", "2027-01-06", "2027-01-07"]);
+    expect(r.errors).toEqual([]);
+  });
+
   it("uses Claude's morning when it validates, and keeps its Skill names for later nights", async () => {
     const db = house();
     const r = await run(db, "2027-01-05T10:15:00Z", async (req) => ({

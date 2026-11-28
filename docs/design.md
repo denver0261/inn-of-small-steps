@@ -110,7 +110,7 @@ Home, Nourish, Endurance, Strength and Recovery are the domains the game is buil
 | Eating well | quick checklist: home-cooked, vegetables, protein, water | each check = tiny, 3+ in a day = normal | rewards adding good things; no calorie counting |
 | Tidying | check off the shared chore list, or a quick room reset | 10-min reset = tiny, a room = normal, deep clean = big | repairs the matching room in your Liscor house |
 | Physical therapy | one tap per session, or Apple Health if logged as a workout | each session = normal | prescribed 3x/week goal; the game never raises it |
-| Sleep | Garmin sleep, synced through Garmin Connect to Apple Health | 7+ hours = normal, under 6 = tiny | feeds stamina and the Rest domain |
+| Sleep | Garmin sleep, synced through Garmin Connect to Apple Health | 7+ hours = normal, less = tiny ([decision 0017](decisions/0017-healthkit-import.md)) | feeds stamina and the Rest domain |
 
 **No double counting.** Each Apple Health workout is stored by its ID. Workouts of the same type that overlap in time (a watch and a lifting app both saving one session) count once, preferring Garmin's record. A workout deleted in Apple Health before the day closes is removed from the log too.
 
