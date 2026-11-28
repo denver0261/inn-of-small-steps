@@ -7,7 +7,7 @@ export type Insert<T extends keyof Tables> = Tables[T]["Insert"];
 /** A habit as the app shows it: the engine's Habit plus how it is logged. */
 export interface HabitInfo extends Habit {
   playerId: string;
-  healthType?: "cycling" | "strength";
+  healthType?: "cycling" | "strength" | "sleep";
   /** False for rides and lifting, which only come from Apple Health. */
   allowTap: boolean;
   archivedOn?: string;
@@ -19,7 +19,7 @@ export interface HabitInfo extends Habit {
 export function habitFromRow(r: Row<"habits">): HabitInfo {
   const habit = Habit.parse({ id: r.id, name: r.name, domain: r.domain, tier: r.tier, tinyVersion: r.tiny_version });
   const info: HabitInfo = { ...habit, playerId: r.player_id, allowTap: r.allow_tap };
-  if (r.health_type === "cycling" || r.health_type === "strength") info.healthType = r.health_type;
+  if (r.health_type === "cycling" || r.health_type === "strength" || r.health_type === "sleep") info.healthType = r.health_type;
   if (r.archived_on !== null) info.archivedOn = r.archived_on;
   return info;
 }

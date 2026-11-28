@@ -20,6 +20,8 @@ export interface HabitRow extends Habit {
 export interface NightDb {
   players(): Promise<PlayerRow[]>;
   householdName(id: string): Promise<string>;
+  /** Closed dates on or after `from`. */
+  closedDates(playerId: string, from: LocalDate): Promise<LocalDate[]>;
   /** The latest closed date for a player, if any. */
   lastClosed(playerId: string): Promise<LocalDate | undefined>;
   /** Closes days at 4:00 (`source = 'auto'`); days already closed are left alone. */

@@ -30,6 +30,9 @@ export class MemoryDb implements NightDb {
   async householdName(id: string) {
     return this.houses.get(id) ?? "?";
   }
+  async closedDates(playerId: string, from: LocalDate) {
+    return [...this.closes.keys()].filter((k) => k.startsWith(`${playerId}|`)).map((k) => k.split("|")[1]!).filter((d) => d >= from);
+  }
   async lastClosed(playerId: string) {
     return [...this.closes.keys()].filter((k) => k.startsWith(`${playerId}|`)).map((k) => k.split("|")[1]!).sort().at(-1);
   }

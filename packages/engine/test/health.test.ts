@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { HealthWorkout } from "@inn/schema";
-import { DEFAULT_TUNING as T, healthLogs } from "../src/index.ts";
+import { DEFAULT_TUNING as T, healthLogs, planHealthSync, sleepLogs } from "../src/index.ts";
 
 const TZ = "America/Chicago";
 const habitFor = { cycling: "ride", strength: "lift" };
@@ -66,5 +66,38 @@ describe("Apple Health import", () => {
   it("puts a 2 a.m. workout on the previous game day and ignores unmapped types", () => {
     const logs = healthLogs([w("night", "cycling", "2024-01-02T02:00", 20), w("lift", "strength", "2024-01-02T09:00", 20)], { habitFor: { cycling: "ride" }, timeZone: TZ }, T);
     expect(logs.map((l) => [l.healthWorkoutId, l.date])).toEqual([["night", "2024-01-01"]]);
+  });
+});
+
+describe("sleep from Apple Health", () => {
+  const opts = { habitId: "sleep", timeZone: "America/Chicago" };
+  // Chicago in January is UTC-6.
+  const span = (start: string, end: string) => ({ start, end });
+
+  it("merges overlapping stages from two devices and counts the night toward the day it ends", () => {
+    const logs = sleepLogs(
+      [span("2027-01-05T05:00:00Z", "2027-01-05T09:00:00Z"), span("2027-01-05T08:00:00Z", "2027-01-05T12:30:00Z"), span("2027-01-05T05:30:00Z", "2027-01-05T07:00:00Z")],
+      opts,
+      T,
+    );
+    // 23:00 to 06:30 Chicago = 7.5 hours, once; it ends on the 5th.
+    expect(logs).toEqual([{ habitId: "sleep", date: "2027-01-05", kind: "full", source: "apple_health", healthWorkoutId: "sleep:2027-01-05" }]);
+  });
+
+  it("makes a short night tiny, ignores a nap under an hour, and moves a late night to the open day", () => {
+    const short = sleepLogs([span("2027-01-05T06:00:00Z", "2027-01-05T11:30:00Z"), span("2027-01-05T20:00:00Z", "2027-01-05T20:30:00Z")], opts, T);
+    expect(short.map((l) => l.kind)).toEqual(["tiny"]);
+    const late = sleepLogs([span("2027-01-05T05:00:00Z", "2027-01-05T13:00:00Z")], { ...opts, lastClosed: "2027-01-05" }, T);
+    expect(late[0]).toMatchObject({ date: "2027-01-06", performedOn: "2027-01-05" });
+  });
+});
+
+describe("planning a sync", () => {
+  it("adds new records, removes ones gone from Apple Health, and replaces changed ones", () => {
+    const log = (hid: string, extra = {}) => ({ habitId: "ride", date: "2027-01-05", kind: "full" as const, tier: "normal" as const, source: "apple_health" as const, healthWorkoutId: hid, ...extra });
+    const existing = [{ ...log("w1"), id: "a" }, { ...log("w2"), id: "b" }, { ...log("w3"), id: "c" }, { habitId: "eat", date: "2027-01-05", kind: "full" as const, source: "tap" as const, id: "d" }];
+    const plan = planHealthSync(existing, [log("w1"), log("w3", { tier: "big" }), log("w4")]);
+    expect(plan.remove.sort()).toEqual(["b", "c"]);
+    expect(plan.insert.map((l) => l.healthWorkoutId)).toEqual(["w3", "w4"]);
   });
 });
