@@ -1,5 +1,23 @@
-import { classPath, EVOLUTION_QUALIFIERS, SKILL_CATALOG } from "@inn/content";
-import { addDays, closeDay, dateRange, DEFAULT_TUNING, gameDateAt, migrateState, NEW_PLAYER_STATE, type PlayerState, type Tuning } from "@inn/engine";
+import { classPath, EVOLUTION_QUALIFIERS, ITEMS, RECIPES, SKILL_CATALOG, TIER1_EVENTS, UPGRADES, upgrade as upgradeDef, item as itemDef } from "@inn/content";
+import {
+  addDays,
+  closeDay,
+  closeHouseNight,
+  dateRange,
+  dayEarnings,
+  DEFAULT_TUNING,
+  gameDateAt,
+  migrateHouse,
+  migrateState,
+  NEW_HOUSE,
+  NEW_PLAYER_STATE,
+  outingSeed,
+  planOuting,
+  type HouseEvent,
+  type HousePlayerResult,
+  type PlayerState,
+  type Tuning,
+} from "@inn/engine";
 import { narrate, playerNight, type Narrate, type PlayerNight } from "@inn/narrator";
 import type { LocalDate } from "@inn/schema";
 import type { NightDb, PlayerRow, StoryRecord } from "./db.ts";
@@ -32,6 +50,7 @@ export async function runNight({ db, now, call, promptVersion, tuning = DEFAULT_
   const report: RunReport = { autoClosed: [], processed: [], stories: [], errors: [] };
   const players = await db.players();
 
+  // Close days whose 4:00 has passed.
   for (const p of players) {
     try {
       const today = gameDateAt(now, p.timeZone);
@@ -41,22 +60,39 @@ export async function runNight({ db, now, call, promptVersion, tuning = DEFAULT_
         await db.autoClose(p.id, dates);
         report.autoClosed.push({ playerId: p.id, dates });
       }
-      for (const date of await db.unprocessed(p.id)) {
-        const levels = await processDay(db, p, date, tuning);
-        report.processed.push({ playerId: p.id, date, levels });
-      }
     } catch (e) {
       report.errors.push({ playerId: p.id, message: message(e) });
     }
   }
 
+  // A player with no house yet closes on their own.
+  for (const p of players.filter((x) => !x.householdId)) {
+    try {
+      for (const date of await db.unprocessed(p.id)) report.processed.push({ playerId: p.id, date, levels: await processDay(db, p, date, tuning) });
+    } catch (e) {
+      report.errors.push({ playerId: p.id, message: message(e) });
+    }
+  }
+
+  // A house settles each day once every housemate has closed it: the house's night
+  // (income, outings, meals, building, crafting), then each player, then the morning.
   const houses = new Map<string, PlayerRow[]>();
   for (const p of players) if (p.householdId) houses.set(p.householdId, [...(houses.get(p.householdId) ?? []), p]);
   for (const [householdId, members] of houses) {
     try {
+      const dates = [...new Set((await Promise.all(members.map((m) => db.unprocessed(m.id)))).flat())].sort();
+      for (const date of dates) {
+        const active = members.filter((m) => m.startedOn <= date);
+        if (!(await allClosed(db, active, date))) break; // wait for the housemate; later days wait too
+        const settled = await settleHouse(db, householdId, active, date, tuning);
+        for (const m of active) {
+          if (!(await db.unprocessed(m.id)).includes(date)) continue;
+          report.processed.push({ playerId: m.id, date, levels: await processDay(db, m, date, tuning, settled[m.id]) });
+        }
+      }
       for (const date of await db.pendingStoryDates(householdId)) {
         const active = members.filter((m) => m.startedOn <= date);
-        if (!(await allClosed(db, active, date))) break; // wait for the housemate; later dates wait too
+        if (!(await allProcessed(db, active, date))) break;
         const story = await writeMorning(db, householdId, active, date, call, promptVersion);
         report.stories.push({ householdId, date, source: story.source, ...(story.error ? { error: story.error } : {}) });
       }
@@ -67,7 +103,53 @@ export async function runNight({ db, now, call, promptVersion, tuning = DEFAULT_
   return report;
 }
 
-async function processDay(db: NightDb, p: PlayerRow, date: LocalDate, tuning: Tuning): Promise<number[]> {
+/** Runs the house's night for a day, or returns what an earlier run already settled. */
+async function settleHouse(db: NightDb, householdId: string, members: readonly PlayerRow[], date: LocalDate, tuning: Tuning): Promise<Record<string, HousePlayerResult>> {
+  const done = await db.houseNight(householdId, date);
+  if (done) return done.players;
+  const saved = await db.houseState(householdId);
+  const house = saved === undefined ? NEW_HOUSE : migrateHouse(saved);
+  const orders = await db.orders(householdId, date);
+  const states = new Map<string, PlayerState>();
+  for (const m of members) {
+    const raw = await db.loadState(m.id);
+    states.set(m.id, raw === undefined ? NEW_PLAYER_STATE : migrateState(raw));
+  }
+  const players = await Promise.all(
+    members.map(async (m) => {
+      const state = states.get(m.id)!;
+      const outings = (await db.outings(m.id, date)).sort((a, b) => a.index - b.index).map((o) => {
+        const seed = outingSeed(m.id, date, o.index);
+        return { seed, eventIds: planOuting(seed, TIER1_EVENTS, tuning), choices: o.choices };
+      });
+      return {
+        playerId: m.id,
+        earned: dayEarnings(await db.logs(m.id, date), await db.habits(m.id), tuning).resources,
+        stamina: state.stamina,
+        context: { level: state.progress.level, skills: state.skills, pity: state.pity },
+        outings,
+        meals: orders.filter((o) => o.kind === "meal" && o.playerId === m.id).map((o) => o.ref),
+      };
+    }),
+  );
+  const r = closeHouseNight(
+    house,
+    {
+      date,
+      householdId,
+      players,
+      builds: orders.filter((o) => o.kind === "build").map((o) => o.ref),
+      crafts: orders.filter((o) => o.kind === "craft").map((o) => o.ref),
+      skillThemes: [...new Set([...states.values()].flatMap((s) => s.skills.map((k) => k.theme)))],
+      content: { upgrades: UPGRADES, recipes: RECIPES, items: ITEMS, events: TIER1_EVENTS },
+    },
+    tuning,
+  );
+  await db.recordHouseNight(householdId, date, r.house, r.events, r.players);
+  return r.players;
+}
+
+async function processDay(db: NightDb, p: PlayerRow, date: LocalDate, tuning: Tuning, house?: HousePlayerResult): Promise<number[]> {
   const saved = await db.loadState(p.id);
   const state: PlayerState = saved === undefined ? NEW_PLAYER_STATE : migrateState(saved);
   if (state.lastClosed !== undefined && date <= state.lastClosed) {
@@ -90,6 +172,7 @@ async function processDay(db: NightDb, p: PlayerRow, date: LocalDate, tuning: Tu
       catalog: SKILL_CATALOG,
       qualifiers: EVOLUTION_QUALIFIERS,
       choices: await db.choices(p.id, date),
+      ...(house ? { house } : {}),
     },
     tuning,
   );
@@ -101,9 +184,25 @@ async function allClosed(db: NightDb, members: readonly PlayerRow[], date: Local
   for (const m of members) {
     const last = await db.lastClosed(m.id);
     if (last === undefined || last < date) return false;
-    if ((await db.unprocessed(m.id)).some((d) => d <= date)) return false;
   }
   return true;
+}
+
+async function allProcessed(db: NightDb, members: readonly PlayerRow[], date: LocalDate): Promise<boolean> {
+  if (!(await allClosed(db, members, date))) return false;
+  for (const m of members) if ((await db.unprocessed(m.id)).some((d) => d <= date)) return false;
+  return true;
+}
+
+/** Plain sentences about the house's night, for the morning. */
+export function houseNews(events: readonly HouseEvent[], names: Readonly<Record<string, string>>): string[] {
+  const out: string[] = [];
+  for (const e of events) {
+    if (e.type === "built") out.push(`${upgradeDef(e.upgradeId).name} is finished overnight.`);
+    if (e.type === "crafted") out.push(`${itemDef(e.itemId).name} is ready${e.fine ? ", and it came out especially well" : ""}.`);
+    if (e.type === "outing" && e.result.rare) out.push(`${names[e.playerId] ?? "Someone"} came home from an outing with ${itemDef(e.result.rare).name.toLowerCase()}.`);
+  }
+  return out;
 }
 
 async function writeMorning(db: NightDb, householdId: string, members: readonly PlayerRow[], date: LocalDate, call: Narrate | undefined, promptVersion: string) {
@@ -118,8 +217,10 @@ async function writeMorning(db: NightDb, householdId: string, members: readonly 
     const done = (await db.logs(m.id, date)).map((l) => l.habitId);
     nights.push(playerNight({ playerId: m.id, name: m.name, className, habits, skillNames: await db.skillNames(m.id) }, state, night.events, done));
   }
+  const houseEvents = (await db.houseNight(householdId, date))?.events ?? [];
+  const news = houseNews(houseEvents, Object.fromEntries(members.map((m) => [m.id, m.name])));
   const narration = await narrate(
-    { date, householdName: await db.householdName(householdId), players: nights, recentScenes: await db.recentScenes(householdId, date, 7) },
+    { date, householdName: await db.householdName(householdId), players: nights, recentScenes: await db.recentScenes(householdId, date, 7), houseNews: news },
     call,
   );
   const record: StoryRecord = {

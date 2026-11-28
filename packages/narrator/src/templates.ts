@@ -31,6 +31,7 @@ export function templateNarration(req: NarrationRequest): NarrationOutput {
   const scene = pick(seeded(req.householdName, req.date), pool)
     .replaceAll("{names}", joinNames(req.players.map((p) => p.name)))
     .replaceAll("{house}", req.householdName);
+  const news = req.houseNews ?? [];
   return {
     players: req.players.map((p) => ({
       playerId: p.playerId,
@@ -38,6 +39,6 @@ export function templateNarration(req: NarrationRequest): NarrationOutput {
       skillNames: [...p.skillsGained, ...p.skillChoice].map((s) => ({ defId: s.defId, tier: s.tier, name: s.fallbackName, text: s.summary })),
       evolutionNames: p.evolutionOffer.map((o) => ({ optionId: o.optionId, name: o.fallbackName, text: `A path shaped by ${o.domain}.` })),
     })),
-    morningScene: scene,
+    morningScene: news.length > 0 ? `${scene}\n\n${news.join(" ")}` : scene,
   };
 }

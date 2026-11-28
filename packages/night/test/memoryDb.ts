@@ -1,4 +1,4 @@
-import type { LevelEvent, NightChoices } from "@inn/engine";
+import type { HouseEvent, HousePlayerResult, LevelEvent, NightChoices } from "@inn/engine";
 import type { Goal, HabitLog, LocalDate, Pause } from "@inn/schema";
 import type { HabitRow, NightDb, PlayerRow, StoryRecord } from "../src/db.ts";
 
@@ -15,6 +15,10 @@ export class MemoryDb implements NightDb {
   nights = new Map<string, { events: LevelEvent[]; stateAfter: unknown }>();
   stories = new Map<string, StoryRecord>();
   names = new Map<string, string>();
+  houseStates = new Map<string, unknown>();
+  houseNights = new Map<string, { events: HouseEvent[]; players: Record<string, HousePlayerResult> }>();
+  outings_: { playerId: string; date: LocalDate; index: number; choices: number[] }[] = [];
+  orders_: { householdId: string; date: LocalDate; playerId: string; kind: "build" | "craft" | "meal"; ref: string }[] = [];
 
   sleep(playerId: string, date: LocalDate) {
     if (!this.closes.has(`${playerId}|${date}`)) this.closes.set(`${playerId}|${date}`, { source: "sleep", processed: false });
@@ -81,5 +85,23 @@ export class MemoryDb implements NightDb {
     if (this.stories.has(key)) return;
     this.stories.set(key, s);
     for (const p of s.players) for (const n of p.skillNames) this.names.set(`${p.playerId}|${n.defId}:${n.tier}`, n.name);
+  }
+
+  async houseState(householdId: string) {
+    return this.houseStates.get(householdId);
+  }
+  async houseNight(householdId: string, date: LocalDate) {
+    return this.houseNights.get(`${householdId}|${date}`);
+  }
+  async recordHouseNight(householdId: string, date: LocalDate, state: unknown, events: readonly HouseEvent[], players: Record<string, HousePlayerResult>) {
+    const json = JSON.parse(JSON.stringify({ state, events, players }));
+    this.houseStates.set(householdId, json.state);
+    this.houseNights.set(`${householdId}|${date}`, { events: json.events, players: json.players });
+  }
+  async outings(playerId: string, date: LocalDate) {
+    return this.outings_.filter((o) => o.playerId === playerId && o.date === date).map(({ index, choices }) => ({ index, choices }));
+  }
+  async orders(householdId: string, date: LocalDate) {
+    return this.orders_.filter((o) => o.householdId === householdId && o.date === date).map(({ playerId, kind, ref }) => ({ playerId, kind, ref }));
   }
 }

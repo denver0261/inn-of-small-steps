@@ -1,4 +1,4 @@
-import type { LevelEvent, NightChoices } from "@inn/engine";
+import type { HouseEvent, HousePlayerResult, LevelEvent, NightChoices } from "@inn/engine";
 import type { Goal, Habit, HabitLog, LocalDate, Pause } from "@inn/schema";
 
 export interface PlayerRow {
@@ -41,6 +41,16 @@ export interface NightDb {
   skillNames(playerId: string): Promise<Record<string, string>>;
   evolutionName(playerId: string, optionId: string): Promise<string | undefined>;
   recordStory(story: StoryRecord): Promise<void>;
+  /** The saved house state, if the house has had a night yet. */
+  houseState(householdId: string): Promise<unknown | undefined>;
+  /** A settled house night: its events and what it settled per player. */
+  houseNight(householdId: string, date: LocalDate): Promise<{ events: HouseEvent[]; players: Record<string, HousePlayerResult> } | undefined>;
+  /** Atomically saves the house state and the night's events. */
+  recordHouseNight(householdId: string, date: LocalDate, state: unknown, events: readonly HouseEvent[], players: Record<string, HousePlayerResult>): Promise<void>;
+  /** A player's outings on a day: index and choices only (the seed is derived). */
+  outings(playerId: string, date: LocalDate): Promise<{ index: number; choices: number[] }[]>;
+  /** The house's orders for a day, oldest first. */
+  orders(householdId: string, date: LocalDate): Promise<{ playerId: string; kind: "build" | "craft" | "meal"; ref: string }[]>;
 }
 
 export interface StoryRecord {
