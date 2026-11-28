@@ -12,3 +12,4 @@ export * from "./skills.ts";
 export * from "./economy.ts";
 export * from "./expedition.ts";
 export * from "./house.ts";
+export * from "./visitors.ts";

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { ITEMS, RECIPES, SKILL_CATALOG, TIER1_EVENTS, UPGRADES } from "../src/index.ts";
+import { ITEMS, RECIPES, RECRUITS, SKILL_CATALOG, TIER1_EVENTS, UPGRADES, VISITORS } from "../src/index.ts";
 
 const itemIds = new Set(ITEMS.map((i) => i.id));
 
@@ -22,5 +22,23 @@ describe("house content", () => {
   it("gives food stamina and trophies no stats", () => {
     for (const i of ITEMS.filter((x) => x.kind === "food")) expect(i.stamina).toBeGreaterThan(0);
     for (const i of ITEMS.filter((x) => x.kind === "trophy")) expect(i.stamina).toBeUndefined();
+  });
+});
+
+describe("visitor content", () => {
+  it("refers only to upgrades and recruits that exist", () => {
+    for (const v of VISITORS) {
+      if (v.needsUpgrade) expect(UPGRADES.some((u) => u.id === v.needsUpgrade), v.id).toBe(true);
+      if (v.reward.recruit) expect(RECRUITS.some((r) => r.id === v.reward.recruit), v.id).toBe(true);
+    }
+  });
+
+  it("never asks for more physical therapy: no quest targets the Recovery domain", () => {
+    for (const v of VISITORS) expect(v.quest.domain).not.toBe("recovery");
+  });
+
+  it("has every quest measurable: domain quests name a domain, chores quests don't", () => {
+    for (const v of VISITORS) if (v.quest.kind !== "chores") expect(v.quest.domain).toBeDefined();
+    expect(VISITORS.filter((v) => !v.fromInn).length).toBeGreaterThanOrEqual(4);
   });
 });

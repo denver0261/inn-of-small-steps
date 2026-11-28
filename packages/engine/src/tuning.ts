@@ -38,6 +38,18 @@ export interface Tuning {
   };
   /** FLAGGED: Tier 1 outings. `rare*` is the bad-luck protection on trophies. */
   expedition: { staminaCost: number; events: number; rareBase: number; rareStep: number; levelPerBonus: number; skillBonusPerTier: number };
+  /** FLAGGED (decision 0014): how often visitors come, how long they stay, how rarity shifts with goodwill. */
+  visitors: {
+    baseChance: number;
+    chancePerGoodwill: number;
+    maxChance: number;
+    staysDays: number;
+    maxOffers: number;
+    weights: { common: number; uncommon: number; rare: number };
+    rareWeightPerGoodwill: number;
+    /** Goodwill for an evening at the Inn. */
+    innGoodwill: number;
+  };
   /** FLAGGED: crafting mastery. A fine result adds one to the output. */
   crafting: { skilledAt: number; masterAt: number; fineChance: { novice: number; skilled: number; master: number } };
   /** Active habits a player may have: `initial` at first, `later` once `afterDays` have passed. FLAGGED: `later`. */
@@ -73,6 +85,7 @@ export const DEFAULT_TUNING: Tuning = {
     staminaCap: 30,
   },
   expedition: { staminaCost: 10, events: 3, rareBase: 0.05, rareStep: 0.05, levelPerBonus: 4, skillBonusPerTier: 2 },
+  visitors: { baseChance: 0.25, chancePerGoodwill: 0.001, maxChance: 0.6, staysDays: 3, maxOffers: 3, weights: { common: 6, uncommon: 3, rare: 1 }, rareWeightPerGoodwill: 0.01, innGoodwill: 1 },
   crafting: { skilledAt: 5, masterAt: 15, fineChance: { novice: 0, skilled: 0.25, master: 0.5 } },
   capstoneLevel: 10,
 };
