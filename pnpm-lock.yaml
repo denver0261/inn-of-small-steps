@@ -130,6 +130,27 @@ importers:
         specifier: ^4.6.7
         version: 4.6.7
 
+  packages/night:
+    dependencies:
+      '@anthropic-ai/sdk':
+        specifier: 1.8.0
+        version: 1.8.0(zod@4.6.7)
+      '@inn/content':
+        specifier: workspace:*
+        version: link:../content
+      '@inn/engine':
+        specifier: workspace:*
+        version: link:../engine
+      '@inn/narrator':
+        specifier: workspace:*
+        version: link:../narrator
+      '@inn/schema':
+        specifier: workspace:*
+        version: link:../schema
+      '@supabase/supabase-js':
+        specifier: ~2.119.0
+        version: 2.119.0(@opentelemetry/api@1.10.0)
+
   packages/schema:
     dependencies:
       zod:

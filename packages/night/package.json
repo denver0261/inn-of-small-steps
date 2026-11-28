@@ -1,0 +1,19 @@
+{
+  "name": "@inn/night",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "start": "tsx src/main.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "1.8.0",
+    "@inn/content": "workspace:*",
+    "@inn/engine": "workspace:*",
+    "@inn/narrator": "workspace:*",
+    "@inn/schema": "workspace:*",
+    "@supabase/supabase-js": "~2.119.0"
+  }
+}
