@@ -1,13 +1,23 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { Share } from "react-native";
-import { CLASS_PATHS, ITEMS, RECIPES, UPGRADES } from "@inn/content";
+import { CLASS_PATHS, ITEMS, RECIPES, RECRUITS, UPGRADES, VISITORS } from "@inn/content";
 import { canAfford, daysBetween, DEFAULT_TUNING, ladderReady, masteryRank, nextUpgrade } from "@inn/engine";
 import type { Resources } from "@inn/schema";
-import { addOrder, addRoom, cancelOrder, createInvite, getHouse, isDayClosed, listChores, listHousemates, listOrders, listRooms, signOut, updatePlayer } from "../../src/data/api.ts";
+import { addOrder, addRoom, cancelOrder, createInvite, getHouse, isDayClosed, listChores, listHabits, listHousemates, listLogs, listOrders, listRooms, signOut, updatePlayer } from "../../src/data/api.ts";
+import { activityFrom, describeReward, innScene, questView } from "../../src/game/visitors.ts";
 import { sceneLines } from "../../src/game/house.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
-import { Body, Button, Card, Choice, ErrorText, Field, Heading, Row, Screen, Title, useTheme } from "../../src/ui.tsx";
+import { Body, Button, Card, Choice, ErrorText, Field, Heading, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
+
+function orderLabel(kind: string, ref: string): string {
+  if (kind === "build") return `Build ${UPGRADES.find((u) => u.id === ref)?.name}`;
+  if (kind === "craft") return `Cook ${RECIPES.find((r) => r.id === ref)?.name}`;
+  if (kind === "meal") return `Eat ${ITEMS.find((i) => i.id === ref)?.name}`;
+  if (kind === "inn") return "An evening at the Inn";
+  const visitor = VISITORS.find((v) => ref.startsWith(`${v.id}:`))?.name ?? "a visitor";
+  return kind === "accept" ? `Help ${visitor.charAt(0).toLowerCase() + visitor.slice(1)}` : kind === "serve" ? "Serve a guest platter" : "Turn a visitor away";
+}
 
 const cost = (c: Resources) =>
   Object.entries(c)
@@ -22,8 +32,10 @@ export default function House() {
   const { player, household, today, changed, refresh } = useSession();
   const t = useTheme();
   const { data, error } = useData(async () => {
-    const [people, rooms, house, orders, chores, asleep] = await Promise.all([listHousemates(), listRooms(), getHouse(), listOrders(today), listChores(), isDayClosed(today)]);
-    return { people, rooms, house, orders, chores, asleep };
+    const [people, rooms, house, orders, chores, asleep, habits] = await Promise.all([listHousemates(), listRooms(), getHouse(), listOrders(today), listChores(), isDayClosed(today), listHabits()]);
+    const from = house.quests.map((q) => q.startDate).sort()[0];
+    const logs = from && from <= today ? await listLogs(from, today) : [];
+    return { people, rooms, house, orders, chores, asleep, activity: activityFrom(logs, habits) };
   }, [today]);
   const [room, setRoom] = useState("");
   const [invite, setInvite] = useState<string | null>(null);
@@ -33,7 +45,7 @@ export default function House() {
   const rooms = data?.rooms ?? [];
   const house = data?.house;
   const orders = data?.orders ?? [];
-  const order = (kind: "build" | "craft" | "meal", ref: string) => action.run(async () => (await addOrder(today, kind, ref), changed()));
+  const order = (kind: "build" | "craft" | "meal" | "accept" | "decline" | "serve" | "inn", ref: string) => action.run(async () => (await addOrder(today, kind, ref), changed()));
   const cancel = (id: string) => action.run(async () => (await cancelOrder(id), changed()));
   const who = (id: string) => (id === player.id ? "you" : (data?.people.find((p) => p.id === id)?.display_name ?? "?"));
   const next = house ? nextUpgrade(house, UPGRADES) : undefined;
@@ -60,11 +72,80 @@ export default function House() {
           {orders.map((o) => (
             <Row key={o.id}>
               <Body style={{ flex: 1 }}>
-                {o.kind === "build" ? `Build ${UPGRADES.find((u) => u.id === o.ref)?.name}` : o.kind === "craft" ? `Cook ${RECIPES.find((r) => r.id === o.ref)?.name}` : `Eat ${ITEMS.find((i) => i.id === o.ref)?.name}`} · {who(o.player_id)}
+                {orderLabel(o.kind, o.ref)} · {who(o.player_id)}
               </Body>
               {o.player_id === player.id && !locked ? <Button small kind="plain" label="Cancel" onPress={() => cancel(o.id)} /> : null}
             </Row>
           ))}
+
+          {house.visitors.length > 0 ? <Heading>At the door</Heading> : null}
+          {house.visitors.map((v) => {
+            const t = VISITORS.find((x) => x.id === v.templateId);
+            if (!t) return null;
+            const answered = orders.find((o) => (o.kind === "accept" || o.kind === "decline") && o.ref === v.id);
+            const served = orders.some((o) => o.kind === "serve" && o.ref === v.id);
+            const platter = (house.stash.platter ?? 0) > orders.filter((o) => o.kind === "serve").length;
+            return (
+              <Card key={v.id}>
+                <Body style={{ fontWeight: "700" }}>{t.name}</Body>
+                <Body style={{ marginVertical: 6 }}>{t.line}</Body>
+                <Body muted>
+                  {t.quest.ask} {t.quest.coop ? "Together. " : ""}
+                  {t.quest.days} days, from tomorrow. Reward: {describeReward(t.reward.resources, t.reward.recruit)}.
+                </Body>
+                <Body muted style={{ fontSize: 13 }}>Waiting until {v.leavesOn}.</Body>
+                {answered ? (
+                  <Body muted>{answered.kind === "accept" ? `${answered.player_id === player.id ? "You" : who(answered.player_id)} said yes. It starts tomorrow.` : "Turned away politely."}</Body>
+                ) : locked ? null : (
+                  <Row>
+                    <Button small label="Accept" busy={action.busy} onPress={() => order("accept", v.id)} />
+                    <Button small kind="plain" label="Not now" busy={action.busy} onPress={() => order("decline", v.id)} />
+                    {platter && !served ? <Button small kind="plain" label="Serve a guest platter" busy={action.busy} onPress={() => order("serve", v.id)} /> : null}
+                  </Row>
+                )}
+              </Card>
+            );
+          })}
+
+          {house.quests.length > 0 ? <Heading>Quests</Heading> : null}
+          {house.quests.map((q) => {
+            const v = questView(q, data?.activity ?? [], today);
+            if (!v) return null;
+            return (
+              <Card key={q.id}>
+                <Body style={{ fontWeight: "700" }}>{v.ask}</Body>
+                <Body muted>
+                  For {v.name.charAt(0).toLowerCase() + v.name.slice(1)} · {q.startDate > today ? "starts tomorrow" : `${v.done} of ${v.target} so far, until ${q.endDate}`}
+                  {q.acceptedBy !== player.id ? ` · ${who(q.acceptedBy)}'s` : ""}
+                </Body>
+              </Card>
+            );
+          })}
+
+          <Heading>The Wandering Inn</Heading>
+          {orders.some((o) => o.kind === "inn" && o.player_id === player.id) ? (
+            <SystemBox lines={[]}>
+              <Body>{innScene(player.id, today)}</Body>
+              <Body muted style={{ marginTop: 6, fontSize: 13 }}>Someone from the Inn may come by tomorrow.</Body>
+            </SystemBox>
+          ) : locked ? (
+            <Body muted>You're asleep.</Body>
+          ) : (
+            <Card onPress={() => order("inn", "inn")}>
+              <Body style={{ fontWeight: "700" }}>Spend the evening up the hill</Body>
+              <Body muted>A meal, a fire, the regulars. Earns a little goodwill, and someone from the Inn will come calling.</Body>
+            </Card>
+          )}
+
+          {house.recruits.length > 0 ? <Heading>Helping out</Heading> : null}
+          {house.recruits.map((id) => {
+            const r = RECRUITS.find((x) => x.id === id);
+            return r ? (
+              <Body key={id}>
+                {r.name}: {r.description}
+              </Body>
+            ) : null;
+          })}
 
           <Heading>Upgrades</Heading>
           {UPGRADES.slice(1).map((u) => {

@@ -245,7 +245,7 @@ export async function listOrders(date: LocalDate): Promise<Order[]> {
   return ok(await supabase.from("house_orders").select("id, player_id, kind, ref").eq("date", date).order("created_at"));
 }
 
-export async function addOrder(date: LocalDate, kind: "build" | "craft" | "meal", ref: string): Promise<void> {
+export async function addOrder(date: LocalDate, kind: "build" | "craft" | "meal" | "accept" | "decline" | "serve" | "inn", ref: string): Promise<void> {
   ok(await supabase.from("house_orders").insert({ date, kind, ref }));
 }
 
