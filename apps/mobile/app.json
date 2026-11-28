@@ -19,7 +19,8 @@
           "NSHealthUpdateUsageDescription": "Development builds can save a test ride to try the import.",
           "background": false
         }
-      ]
+      ],
+      "expo-font"
     ],
     "experiments": {
       "typedRoutes": false

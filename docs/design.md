@@ -35,6 +35,8 @@ flowchart LR
 
 During the day you only log. At night the System turns logs into levels. In the morning you read what you became, then spend rewards on your house in Liscor, where visitors hand you tomorrow's quests.
 
+**Look and feel.** The app is always night at the inn: slate-blue dark, candle gold, cream text and a Merriweather serif for the inn's voice, loosely after the serial's own site. System messages sit in a glowing blue window. The first open after a night plays the morning: the System's lines type in one at a time (levels and classes in gold, with a haptic), the level bar fills, then the house's scene. It plays once per phone and can be replayed from Today.
+
 ## Day one
 
 Setup takes about 10 minutes each, and the game is playable that same evening.

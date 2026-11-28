@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
+    "@expo-google-fonts/merriweather": "^0.4.2",
     "@inn/content": "workspace:*",
     "@inn/engine": "workspace:*",
     "@inn/schema": "workspace:*",
@@ -17,6 +18,8 @@
     "expo": "~58.0.25",
     "expo-constants": "~58.0.16",
     "expo-dev-client": "~58.0.20",
+    "expo-font": "~58.0.12",
+    "expo-haptics": "~58.0.8",
     "expo-linking": "~58.0.17",
     "expo-router": "~58.0.31",
     "expo-status-bar": "~58.0.5",

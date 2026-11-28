@@ -24,7 +24,7 @@ import { graceLeft, graceSkill, skillView } from "../../src/game/character.ts";
 import { staminaLeft } from "../../src/game/house.ts";
 import { useHealth } from "../../src/health/useHealth.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
-import { Body, Button, Card, ErrorText, Heading, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
+import { Body, Button, Card, ErrorText, Heading, Prose, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
 
 export default function Today() {
   const { player, today, changed } = useSession();
@@ -81,7 +81,8 @@ export default function Today() {
       {morning ? (
         <View style={{ marginBottom: 8 }}>
           {myLines.length > 0 ? <SystemBox lines={myLines} /> : null}
-          <Body>{morning.scene}</Body>
+          <Prose>{morning.scene}</Prose>
+          <Button small kind="plain" label="Replay the morning" onPress={() => router.push("/morning")} />
         </View>
       ) : null}
       {health.wanted && health.available && health.needsPermission && !data?.asleep ? (

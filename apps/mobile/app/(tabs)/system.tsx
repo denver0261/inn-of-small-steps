@@ -4,7 +4,7 @@ import { DEFAULT_TUNING } from "@inn/engine";
 import { getChoices, getMyState, getNames, isDayClosed, listHousemates, listMornings, saveChoices } from "../../src/data/api.ts";
 import { displayClass, levelProgress, roman, skillView } from "../../src/game/character.ts";
 import { useAction, useData, useSession } from "../../src/session.tsx";
-import { Body, Button, Card, ErrorText, Heading, ProgressBar, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
+import { Body, Button, Card, ErrorText, Heading, ProgressBar, Prose, Row, Screen, SystemBox, Title, useTheme } from "../../src/ui.tsx";
 
 /** The character sheet and the System's record: class, level, Skills, Level 10 choices, past mornings. */
 export default function System() {
@@ -119,7 +119,7 @@ export default function System() {
               </SystemBox>
             ) : null,
           )}
-          <Body>{m.scene}</Body>
+          <Prose>{m.scene}</Prose>
         </View>
       ))}
     </Screen>
