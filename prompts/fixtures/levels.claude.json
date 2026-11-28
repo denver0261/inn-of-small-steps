@@ -1,0 +1,17 @@
+{
+  "players": [
+    {
+      "playerId": "kyle",
+      "levelMessages": ["[Rider Level 6!]", "[Skill – Floodplain Miles obtained!]"],
+      "skillNames": [{ "defId": "long_road", "tier": 1, "name": "[Floodplain Miles]", "text": "Roads ridden often remember you. +10% XP on Endurance habits." }],
+      "evolutionNames": []
+    },
+    {
+      "playerId": "partner",
+      "levelMessages": ["[Skill Change – Hearty Portions → Generous Portions!]"],
+      "skillNames": [{ "defId": "hearty_portions", "tier": 2, "name": "[Generous Portions]", "text": "There is always enough for one more. +15% XP on Nourish habits." }],
+      "evolutionNames": []
+    }
+  ],
+  "morningScene": "The rain has moved east by morning, and the street outside the house by the wall smells of wet stone and bread. Kyle is up first, legs heavy from yesterday's ride, and finds the chain still gleaming where he oiled it.\n\nSam is already in the kitchen, humming over a pot that is somehow bigger than it was a week ago. A Drake from the Watch slows as he passes the window and doesn't pretend he isn't sniffing."
+}

@@ -1,0 +1,9 @@
+{
+  "date": "2027-03-02",
+  "householdName": "The house by the wall",
+  "players": [
+    { "playerId": "kyle", "name": "Kyle", "className": "[Rider]", "level": 11, "levelsGained": [], "skillsGained": [], "skillChoice": [], "evolutionOffer": [], "habitsDone": [], "graced": [], "skillsHeld": [] },
+    { "playerId": "partner", "name": "Sam", "className": "[Chef]", "level": 9, "levelsGained": [], "skillsGained": [], "skillChoice": [], "evolutionOffer": [], "habitsDone": ["Eating well"], "graced": ["Physical therapy"], "comebackAfterDays": 4, "skillsHeld": ["[Mend]"] }
+  ],
+  "recentScenes": []
+}

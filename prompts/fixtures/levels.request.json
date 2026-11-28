@@ -1,0 +1,37 @@
+{
+  "date": "2027-01-12",
+  "householdName": "The house by the wall",
+  "players": [
+    {
+      "playerId": "kyle",
+      "name": "Kyle",
+      "className": "[Rider]",
+      "level": 6,
+      "levelsGained": [6],
+      "skillsGained": [
+        { "defId": "long_road", "tier": 1, "theme": "endurance", "summary": "+10% XP on Endurance habits.", "fallbackName": "[Long Road]" }
+      ],
+      "skillChoice": [],
+      "evolutionOffer": [],
+      "habitsDone": ["Biking", "Eating well", "Physical therapy"],
+      "graced": [],
+      "skillsHeld": ["[Basic Cleaning]", "[Second Wind]", "[Long Road]"]
+    },
+    {
+      "playerId": "partner",
+      "name": "Sam",
+      "className": "[Chef]",
+      "level": 5,
+      "levelsGained": [],
+      "skillsGained": [
+        { "defId": "hearty_portions", "tier": 2, "upgradedFrom": { "tier": 1, "name": "[Hearty Portions]" }, "theme": "nourish", "summary": "+15% XP on Nourish habits.", "fallbackName": "[Generous Portions]" }
+      ],
+      "skillChoice": [],
+      "evolutionOffer": [],
+      "habitsDone": ["Eating well", "Tidying"],
+      "graced": [],
+      "skillsHeld": ["[Generous Portions]"]
+    }
+  ],
+  "recentScenes": ["Rain over the Floodplains. Kyle oiled the bike chain while Sam argued with a Gnoll butcher about the price of mutton."]
+}
