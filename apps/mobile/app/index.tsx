@@ -10,5 +10,5 @@ export default function Gate() {
   if (!player) return <Redirect href="/setup/profile" />;
   if (!household) return <Redirect href="/setup/house" />;
   if (!player.class_path_id) return <Redirect href="/setup/path" />;
-  return <Redirect href="/today" />;
+  return <Redirect href="/inn" />;
 }

@@ -79,7 +79,7 @@ export default function MorningReveal() {
   function close() {
     if (player && data?.morning) void markMorningSeen(player.id, data.morning.date);
     if (router.canGoBack()) router.back();
-    else router.replace("/today");
+    else router.replace("/inn");
   }
 
   if (!data || !player) return <Loading />;
