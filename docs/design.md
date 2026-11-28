@@ -80,7 +80,7 @@ As in canon (\[Magical Innkeeper\], \[Cryomancer\]), classes get more specific a
 
 ### Habits flavor your Skills
 
-When a Skill is due, the rules pick its mechanic, and your last 14 days of habits, chores included, pick its theme. The domain you did most sets the theme, and Claude writes a name and description to match.
+When a Skill is due, the rules pick its mechanic, and your last 14 days of habits, chores included, pick its theme. The domain you did most sets the theme, weighed the way XP weighs it (focus domains count fully, others half), and a theme you already hold counts for less so Skills spread out ([decision 0007](decisions/0007-m2-skills.md)). Claude writes a name and description to match.
 
 - A \[Warrior\] who's been clearing the chore list: \[Skill – Clean Sweep\], a grace day themed on tidying.
 - A \[Warrior\] who's been cooking: \[Skill – Soldier's Rations\], +1 ingredient per meal logged.

@@ -1,4 +1,5 @@
-import { addDays, closeDay, DEFAULT_TUNING, NEW_PLAYER_STATE, weekday, type Tuning } from "@inn/engine";
+import { EVOLUTION_QUALIFIERS, SKILL_CATALOG } from "@inn/content";
+import { addDays, closeDay, DEFAULT_TUNING, NEW_PLAYER_STATE, weekday, type NightChoices, type Tuning } from "@inn/engine";
 import { dayLogs, FOCUS, goals, HABITS, mulberry32, PROFILES, type Profile } from "./profiles.ts";
 
 /** A Monday, so simulated weeks line up with the engine's Monday-to-Sunday weeks. */
@@ -16,6 +17,10 @@ export interface ProfileResult {
   /** Average XP per day over the first 49 days (the design's 7-week target). */
   xpPerDayFirst7Weeks: number;
   skillSlotsByLevel10: number;
+  /** Skills held the night after Level 10 (the capstone pick included), as "id tier". */
+  skillsAtLevel10: string[];
+  /** The evolution taken at Level 10. */
+  evolution: string;
   finalLevel: number;
   totalXp: number;
 }
@@ -29,17 +34,31 @@ export function simulateProfile(profile: Profile, tuning: Tuning = DEFAULT_TUNIN
   const dayReached: Record<number, number> = {};
   let xpFirst7Weeks = 0;
   let skillSlotsByLevel10 = 0;
+  let skillsAtLevel10: string[] = [];
+  let evolution = "-";
 
   for (let n = 0; n < DAYS; n++) {
     const date = addDays(START, n);
     const logs = dayLogs(profile, n, date, weekday(date), date >= sleepStart, rng);
-    const r = closeDay(state, { date, focusDomains: FOCUS, habits: HABITS, goals: allGoals, pauses: [], logs }, tuning);
+    // At the capstone the simulated player takes the first Skill and the first evolution offered.
+    const choices: NightChoices = {};
+    if (state.pendingSkillChoice) choices.skill = state.pendingSkillChoice.options[0]?.skill.defId ?? "";
+    if (state.pendingEvolution) choices.evolution = state.pendingEvolution.options[0]?.id ?? "";
+    const r = closeDay(
+      state,
+      { date, focusDomains: FOCUS, habits: HABITS, goals: allGoals, pauses: [], logs, playerId: profile.id, className: "[Rider]", catalog: SKILL_CATALOG, qualifiers: EVOLUTION_QUALIFIERS, choices },
+      tuning,
+    );
     for (const e of r.events) {
       if (e.type === "level_up" && e.level <= 10) dayReached[e.level] = n + 1;
       if (e.type === "skill_slot" && e.level <= 10) skillSlotsByLevel10 += 1;
     }
     if (n < 49) xpFirst7Weeks += r.state.progress.totalXp - state.progress.totalXp;
     state = r.state;
+    if (dayReached[10] !== undefined && dayReached[10] < n + 1 && skillsAtLevel10.length === 0) {
+      skillsAtLevel10 = state.skills.map((k) => `${k.defId} ${k.tier}`);
+      evolution = state.evolution?.fallbackName ?? "-";
+    }
     if ((n + 1) % 30 === 0 && levelByMonth.length < 12) levelByMonth.push(state.progress.level);
   }
 
@@ -50,6 +69,8 @@ export function simulateProfile(profile: Profile, tuning: Tuning = DEFAULT_TUNIN
     dayReached,
     xpPerDayFirst7Weeks: Math.round(xpFirst7Weeks / 49),
     skillSlotsByLevel10,
+    skillsAtLevel10,
+    evolution,
     finalLevel: state.progress.level,
     totalXp: state.progress.totalXp,
   };
@@ -74,6 +95,9 @@ export function report(results: readonly ProfileResult[]): string {
   lines.push(`XP/day, first 7 weeks   ${results.map((r) => pad(r.xpPerDayFirst7Weeks, 8)).join("")}   (design target: ~75)`);
   lines.push(`week Level 10 reached   ${results.map((r) => pad(r.dayReached[10] ? (r.dayReached[10] / 7).toFixed(1) : "-", 8)).join("")}   (design target: ~7)`);
   lines.push(`Skill slots by L10      ${results.map((r) => pad(r.skillSlotsByLevel10, 8)).join("")}`);
+  lines.push("");
+  lines.push("Skills and evolution at Level 10 (the simulated player takes the first option)");
+  for (const r of results) lines.push(`  ${pad(r.id, 7)} ${r.evolution}: ${r.skillsAtLevel10.join(", ")}`);
   lines.push("");
   for (const r of results) lines.push(`  ${r.id}: ${r.description}`);
   lines.push("");
