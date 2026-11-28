@@ -1,6 +1,7 @@
 import type { Domain, EvolutionOption, Goal, Habit, HabitLog, LocalDate, Pause, SkillDef, SkillInstance } from "@inn/schema";
 import { addDays, dateRange, daysBetween, weekStart, weekday } from "./dates.ts";
 import { activeGoal, effectiveWeeklyTarget, isPaused, isScheduledDay } from "./goals.ts";
+import { dayEarnings } from "./economy.ts";
 import { addXp, NEW_PLAYER, type Progress } from "./levels.ts";
 import { consistencyRate, type SessionsOn } from "./progress.ts";
 import { seeded } from "./rng.ts";
@@ -14,7 +15,7 @@ export interface DayRecord {
 }
 
 /** Bumped when the saved shape changes; `migrateState` upgrades older saves. */
-export const STATE_VERSION = 1;
+export const STATE_VERSION = 2;
 
 export interface PlayerState {
   version: typeof STATE_VERSION;
@@ -36,15 +37,23 @@ export interface PlayerState {
   evolution?: EvolutionOption;
   /** Grace-day charges spent this week, by Skill. Resets each Monday. */
   graceUsed?: { weekStart: LocalDate; byDef: Readonly<Record<string, number>> };
+  /** Fuel for expeditions, from rides, lifting, PT, eating well and sleep. Capped. */
+  stamina: number;
+  /** Outings since the last rare find (bad-luck protection). */
+  pity: number;
 }
 
-export const NEW_PLAYER_STATE: PlayerState = { version: STATE_VERSION, progress: NEW_PLAYER, misses: {}, history: [], skills: [] };
+export const NEW_PLAYER_STATE: PlayerState = { version: STATE_VERSION, progress: NEW_PLAYER, misses: {}, history: [], skills: [], stamina: 0, pity: 0 };
 
 /** Upgrades a saved state from any earlier version. Unversioned saves are the M0 shape. */
 export function migrateState(saved: unknown): PlayerState {
   const s = saved as Partial<PlayerState> & { version?: number };
   if (s.version === STATE_VERSION) return s as PlayerState;
-  if (s.version === undefined) return { ...(s as Omit<PlayerState, "version" | "skills">), version: STATE_VERSION, skills: [] };
+  // v0 (M0): no skills. v1 (M2): no stamina or pity.
+  if (s.version === undefined || s.version === 1) {
+    const old = s as Omit<PlayerState, "version" | "stamina" | "pity" | "skills"> & { skills?: PlayerState["skills"] };
+    return { ...old, skills: old.skills ?? [], version: STATE_VERSION, stamina: 0, pity: 0 };
+  }
   throw new Error(`unknown player state version: ${String(s.version)}`);
 }
 
@@ -78,6 +87,8 @@ export interface NightInput {
   /** Evolution qualifiers by domain (packages/content). */
   qualifiers?: Readonly<Record<string, string>>;
   choices?: NightChoices;
+  /** What the house's night settled for this player (outings, meals). Applies to `date` only. */
+  house?: { staminaSpent: number; staminaFromMeals: number; pity: number };
 }
 
 export interface XpFactors {
@@ -98,7 +109,8 @@ export type LevelEvent =
   | { type: "skill_choice_offered"; date: LocalDate; level: number; options: readonly SkillGrant[] }
   | { type: "evolution_offered"; date: LocalDate; options: readonly EvolutionOption[]; reroll: boolean }
   | { type: "evolution_chosen"; date: LocalDate; option: EvolutionOption }
-  | { type: "grace"; date: LocalDate; habitId: string; skillId: string };
+  | { type: "grace"; date: LocalDate; habitId: string; skillId: string }
+  | { type: "stamina"; date: LocalDate; earned: number; spent: number; meals: number; stamina: number };
 
 export interface NightResult {
   state: PlayerState;
@@ -116,7 +128,7 @@ export function closeDay(state: PlayerState, input: NightInput, tuning: Tuning):
   let current = state;
   if (state.lastClosed !== undefined) {
     for (const gap of dateRange(addDays(state.lastClosed, 1), addDays(input.date, -1))) {
-      const { choices: _, ...rest } = input;
+      const { choices: _, house: __, ...rest } = input;
       const r = closeOne(current, { ...rest, date: gap, logs: [] }, tuning);
       current = r.state;
       events.push(...r.events);
@@ -271,6 +283,13 @@ function closeOne(state: PlayerState, input: NightInput, tuning: Tuning): NightR
     }
   }
 
+  // Stamina: what today's logs earned, less what today's outings spent, plus meals. Capped.
+  const earned = dayEarnings(logs, input.habits, tuning).stamina;
+  const spentStamina = input.house?.staminaSpent ?? 0;
+  const meals = input.house?.staminaFromMeals ?? 0;
+  const stamina = Math.min(tuning.economy.staminaCap, Math.max(0, state.stamina - spentStamina) + earned + meals);
+  if (earned + spentStamina + meals > 0) events.push({ type: "stamina", date, earned, spent: spentStamina, meals, stamina });
+
   // Keep the consistency window plus one week for weekly targets.
   const keep = tuning.consistency.windowDays + 7;
   const next: PlayerState = {
@@ -280,6 +299,8 @@ function closeOne(state: PlayerState, input: NightInput, tuning: Tuning): NightR
     history: lookback.slice(-keep),
     lastClosed: date,
     skills,
+    stamina,
+    pity: input.house?.pity ?? state.pity,
   };
   const lastActive = logs.length > 0 ? date : state.lastActive;
   if (lastActive !== undefined) next.lastActive = lastActive;

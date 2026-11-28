@@ -170,3 +170,79 @@ export const EvolutionOption = z.object({
   fallbackName: z.string().regex(/^\[.+\]$/),
 });
 export type EvolutionOption = z.infer<typeof EvolutionOption>;
+
+// M3: the house in Liscor -------------------------------------------------------
+
+/** The four shared currencies. Stamina is per player and lives in PlayerState. */
+export const Resource = z.enum(["coins", "supplies", "mana", "goodwill"]);
+export type Resource = z.infer<typeof Resource>;
+export const Resources = z.partialRecord(Resource, z.number().int().min(0));
+export type Resources = z.infer<typeof Resources>;
+
+/** Things that land in the shared stash. */
+export const ItemDef = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  kind: z.enum(["bulk", "consumable", "food", "trophy"]),
+  description: z.string().min(1),
+  /** Food: stamina for whoever eats it (at the next close). */
+  stamina: z.number().int().positive().optional(),
+  /** Goodwill when served to visitors (M4). */
+  goodwill: z.number().int().positive().optional(),
+});
+export type ItemDef = z.infer<typeof ItemDef>;
+
+export const Loot = z.object({
+  resources: Resources.optional(),
+  items: z.record(z.string(), z.number().int().positive()).optional(),
+});
+export type Loot = z.infer<typeof Loot>;
+
+/** One rung of the house upgrade ladder. Built overnight once ordered and affordable. */
+export const Upgrade = z.object({
+  id: z.string().min(1),
+  /** Position on the ladder; each needs the one before it. */
+  step: z.number().int().min(1),
+  name: z.string().min(1),
+  description: z.string().min(1),
+  cost: Resources,
+  /** A Skill theme someone in the house must hold (the garden needs a Spirit Skill). */
+  needsSkillTheme: Domain.optional(),
+  /** One line for the house scene once it's built. */
+  scene: z.string().min(1),
+});
+export type Upgrade = z.infer<typeof Upgrade>;
+
+export const Recipe = z.object({
+  id: z.string().min(1),
+  name: z.string().min(1),
+  /** Cookfire works from day one; the kitchen needs its upgrade. */
+  station: z.enum(["cookfire", "kitchen"]),
+  cost: Resources,
+  output: z.object({ itemId: z.string().min(1), qty: z.number().int().positive() }),
+  description: z.string().min(1),
+});
+export type Recipe = z.infer<typeof Recipe>;
+
+/** A Tier 1 expedition event: a setup and 2-3 choices, each a d20 check helped by a Skill theme. */
+export const ExpeditionEvent = z.object({
+  id: z.string().min(1),
+  tier: z.literal(1),
+  place: z.string().min(1),
+  setup: z.string().min(1),
+  choices: z
+    .array(
+      z.object({
+        label: z.string().min(1),
+        /** Holding a Skill in this theme adds to the roll. */
+        theme: Domain,
+        /** The d20 total needed to succeed. */
+        difficulty: z.number().int().min(2).max(20),
+        success: z.object({ text: z.string().min(1), loot: Loot }),
+        failure: z.object({ text: z.string().min(1), loot: Loot }),
+      }),
+    )
+    .min(2)
+    .max(3),
+});
+export type ExpeditionEvent = z.infer<typeof ExpeditionEvent>;
