@@ -1,7 +1,7 @@
 import { router } from "expo-router";
 import { useState } from "react";
 import { gameDate, systemClock } from "@inn/engine";
-import { createPlayer } from "../../src/data/api.ts";
+import { createPlayer, signOut } from "../../src/data/api.ts";
 import { deviceTimeZone, useAction, useSession } from "../../src/session.tsx";
 import { Body, Button, ErrorText, Field, Screen, Title } from "../../src/ui.tsx";
 
@@ -32,6 +32,7 @@ export default function Profile() {
         }
       />
       <ErrorText error={error} />
+      <Button label="Use a different email" kind="plain" onPress={() => void signOut().then(() => router.replace("/"))} />
     </Screen>
   );
 }

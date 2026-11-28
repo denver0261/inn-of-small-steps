@@ -1,4 +1,5 @@
 import type { StarterHabit } from "@inn/content";
+import { migrateState, NEW_PLAYER_STATE, type PlayerState } from "@inn/engine";
 import type { Chore, Goal, HabitLog, LocalDate } from "@inn/schema";
 import { supabase } from "../lib/supabase.ts";
 import {
@@ -24,7 +25,7 @@ function ok<T>(res: { data: T; error: { message: string } | null }): NonNullable
 }
 
 /** Like `ok`, for a lookup that may find nothing. */
-function maybe<T>(res: { data: T | null; error: { message: string } | null }): T | null {
+function maybe<R extends { data: unknown; error: { message: string } | null }>(res: R): R["data"] {
   if (res.error) throw new Error(res.error.message);
   return res.data;
 }
@@ -172,4 +173,61 @@ export async function saveCheckOff(chore: Chore, log: HabitLog): Promise<void> {
 
 export async function removeChore(id: string): Promise<void> {
   ok(await supabase.from("chores").delete().eq("id", id));
+}
+
+// The System (M2): sleep, the morning, the character sheet and Level 10 choices.
+
+/** "Go to sleep": closes today now. Logs and choices lock; the morning comes after the next run. */
+export async function goToSleep(): Promise<void> {
+  ok(await supabase.rpc("go_to_sleep"));
+}
+
+export async function isDayClosed(date: LocalDate): Promise<boolean> {
+  return maybe(await supabase.from("day_closes").select("date").eq("date", date).maybeSingle()) !== null;
+}
+
+/** My engine state as of the last night, or a new player's before the first one. */
+export async function getMyState(): Promise<PlayerState> {
+  const row = maybe(await supabase.from("player_states").select("state").maybeSingle());
+  return row ? migrateState(row.state) : NEW_PLAYER_STATE;
+}
+
+export interface Morning {
+  date: LocalDate;
+  scene: string;
+  source: string;
+  /** System messages per player id. */
+  messages: Record<string, string[]>;
+}
+
+/** The house's mornings, newest first. */
+export async function listMornings(limit: number): Promise<Morning[]> {
+  const stories = ok(await supabase.from("story_entries").select("date, scene, source").order("date", { ascending: false }).limit(limit));
+  if (stories.length === 0) return [];
+  const msgs = ok(await supabase.from("system_messages").select("player_id, date, messages").in("date", stories.map((s) => s.date)));
+  return stories.map((s) => ({
+    ...s,
+    messages: Object.fromEntries(msgs.filter((m) => m.date === s.date).map((m) => [m.player_id, m.messages])),
+  }));
+}
+
+/** Names the System gave a player's Skills, by `${defId}:${tier}`, and their evolution options by id. */
+export async function getNames(playerId: string): Promise<{ skills: Record<string, { name: string; text: string }>; evolutions: Record<string, { name: string; text: string }> }> {
+  const skills = ok(await supabase.from("skill_names").select("def_id, tier, name, text").eq("player_id", playerId));
+  const evolutions = ok(await supabase.from("evolution_names").select("option_id, name, text").eq("player_id", playerId));
+  return {
+    skills: Object.fromEntries(skills.map((s) => [`${s.def_id}:${s.tier}`, { name: s.name, text: s.text }])),
+    evolutions: Object.fromEntries(evolutions.map((e) => [e.option_id, { name: e.name, text: e.text }])),
+  };
+}
+
+export type Choices = Pick<Row<"night_choices">, "skill" | "evolution" | "reroll_evolution" | "grace">;
+
+export async function getChoices(date: LocalDate): Promise<Choices | null> {
+  return maybe(await supabase.from("night_choices").select("skill, evolution, reroll_evolution, grace").eq("date", date).maybeSingle());
+}
+
+/** Saves today's choices; they apply when the day closes. */
+export async function saveChoices(date: LocalDate, choices: Partial<Choices>): Promise<void> {
+  ok(await supabase.from("night_choices").upsert({ date, ...choices }, { onConflict: "player_id,date" }));
 }

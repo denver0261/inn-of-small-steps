@@ -1,5 +1,7 @@
 import type { Session } from "@supabase/supabase-js";
+import { useFocusEffect } from "expo-router";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
+import { AppState } from "react-native";
 import { gameDate, systemClock } from "@inn/engine";
 import type { LocalDate } from "@inn/schema";
 import { getHousehold, getMe, type Player } from "./data/api.ts";
@@ -58,6 +60,14 @@ export function SessionProvider({ children }: { children: ReactNode }) {
   }, [load]);
 
   const changed = useCallback(() => setVersion((v) => v + 1), []);
+
+  // Coming back to the app may mean a new day or a new morning: reload.
+  useEffect(() => {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next === "active") setVersion((v) => v + 1);
+    });
+    return () => sub.remove();
+  }, []);
   const today = gameDate(systemClock, player?.time_zone ?? deviceTimeZone());
 
   return (
@@ -76,6 +86,9 @@ export function useData<T>(fn: () => Promise<T>, deps: readonly unknown[] = []) 
   const { version } = useSession();
   const [data, setData] = useState<T | undefined>(undefined);
   const [error, setError] = useState<string | null>(null);
+  // Reload whenever the screen comes back into view (switching tabs, returning from a push).
+  const [focus, setFocus] = useState(0);
+  useFocusEffect(useCallback(() => setFocus((f) => f + 1), []));
   useEffect(() => {
     let live = true;
     fn().then(
@@ -85,7 +98,7 @@ export function useData<T>(fn: () => Promise<T>, deps: readonly unknown[] = []) 
     return () => {
       live = false;
     };
-  }, [version, ...deps]);
+  }, [version, focus, ...deps]);
   return { data, error };
 }
 
